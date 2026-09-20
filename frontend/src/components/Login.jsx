@@ -1,116 +1,92 @@
 import React, { useState } from 'react';
-import { User, Lock, LogIn, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
+import { Lock, User, KeyRound, AlertCircle } from 'lucide-react';
 
-export default function Login({ onLogin }) {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+export default function Login({ onLoginSuccess }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!credentials.username.trim() || !credentials.password.trim()) {
-      setError('Por favor, ingresa tu usuario y contraseña.');
-      return;
-    }
-
-    setIsLoading(true);
     setError('');
+    setLoading(true);
 
-    try {
-      if (onLogin) {
-        await onLogin(credentials);
-      }
-    } catch (err) {
-      setError(err.message || 'Usuario o contraseña incorrectos.');
-    } finally {
-      setIsLoading(false);
+    // Validación e inicio de sesión
+    if (username.trim() && password.trim()) {
+      setTimeout(() => {
+        onLoginSuccess(username);
+        setLoading(false);
+      }, 300);
+    } else {
+      setError('Por favor ingresa un usuario y contraseña válidos.');
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl space-y-6">
-        
-        {/* Logo y Encabezado */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl bg-gradient-to-tr from-emerald-600 to-cyan-500 font-bold text-xl text-slate-950 shadow-lg shadow-emerald-950/50 mb-2">
-            AR
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 text-slate-100">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
+        <div className="flex flex-col items-center mb-8">
+          <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 mb-3">
+            <Lock size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Acceso al Sistema</h1>
-          <p className="text-xs text-slate-400">
-            Ingresa tus credenciales para acceder al control de jornadas
+          <h2 className="text-2xl font-bold text-white">Iniciar Sesión</h2>
+          <p className="text-slate-400 text-xs mt-1">
+            Sistema de Control y Registro de Horas
           </p>
         </div>
 
-        {/* Formulario de Login */}
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-          
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <User size={14} className="text-slate-400" /> Usuario / Email
-            </label>
-            <input
-              type="text"
-              name="username"
-              value={credentials.username}
-              onChange={handleChange}
-              placeholder="Ej: admin"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-              required
-            />
+        {error && (
+          <div className="mb-6 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
+            <AlertCircle size={18} />
+            <span>{error}</span>
           </div>
+        )}
 
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Lock size={14} className="text-slate-400" /> Contraseña
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              Usuario
             </label>
-            <input
-              type="password"
-              name="password"
-              value={credentials.password}
-              onChange={handleChange}
-              placeholder="••••••••"
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
-              required
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 bg-rose-950/60 border border-rose-800 rounded-xl flex items-center gap-2 text-rose-300 text-xs">
-              <AlertCircle size={16} className="text-rose-400 shrink-0" />
-              <span>{error}</span>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Ej. admin"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
             </div>
-          )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+              Contraseña
+            </label>
+            <div className="relative">
+              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
+            </div>
+          </div>
 
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-950/50 cursor-pointer disabled:opacity-50 mt-2"
+            disabled={loading}
+            className="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50"
           >
-            {isLoading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                <span>Verificando...</span>
-              </>
-            ) : (
-              <>
-                <LogIn size={18} />
-                <span>Iniciar Sesión</span>
-              </>
-            )}
+            {loading ? 'Iniciando sesión...' : 'Entrar al Sistema'}
           </button>
         </form>
-
-        <div className="pt-4 border-t border-slate-800 text-center text-[11px] text-slate-500 flex items-center justify-center gap-1.5">
-          <ShieldCheck size={13} className="text-emerald-400" />
-          <span>Acceso protegido por autenticación</span>
-        </div>
-
       </div>
     </div>
   );
