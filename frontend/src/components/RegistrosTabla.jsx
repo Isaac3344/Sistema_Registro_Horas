@@ -6,7 +6,6 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit }) {
   const [deleteId, setDeleteId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Filtrar registros dinámicamente por nombre de trabajador o centro de costo
   const filteredRecords = records.filter((r) => {
     const search = searchTerm.toLowerCase();
     const name = (r.worker_name || r.trabajador || '').toLowerCase();
@@ -27,7 +26,6 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit }) {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-slate-100">
-      {/* Cabecera de la Tabla y Buscador */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -43,7 +41,7 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
-            placeholder="Buscar por trabajador o centro..."
+            placeholder="Buscar por trabajador..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-slate-950/60 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
@@ -51,7 +49,6 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit }) {
         </div>
       </div>
 
-      {/* Tabla de Registros */}
       <div className="overflow-x-auto rounded-xl border border-slate-800">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-950/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
@@ -111,6 +108,7 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit }) {
                     <div className="flex items-center justify-end gap-2">
                       {onEdit && (
                         <button
+                          type="button"
                           onClick={() => onEdit(record)}
                           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
                           title="Editar registro"
@@ -119,6 +117,7 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit }) {
                         </button>
                       )}
                       <button
+                        type="button"
                         onClick={() => handleDeleteClick(record.id)}
                         className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
                         title="Eliminar registro"
@@ -134,7 +133,6 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit }) {
         </table>
       </div>
 
-      {/* Modal flotante de Confirmación */}
       <ConfirmModal
         isOpen={Boolean(deleteId)}
         onClose={() => setDeleteId(null)}
@@ -144,4 +142,4 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit }) {
       />
     </div>
   );
-}S
+}
