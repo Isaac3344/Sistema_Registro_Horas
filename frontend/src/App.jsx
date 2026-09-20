@@ -4,14 +4,13 @@ import RegistroForm from './components/RegistroForm';
 import RegistrosTabla from './components/RegistrosTabla';
 import Estadisticas from './components/Estadisticas';
 import { fetchRecords, createRecord, deleteRecord, updateRecord } from './api';
-import { Layers, LogOut, User, PlusCircle, BarChart3 } from 'lucide-react';
+import { Layers, LogOut, User } from 'lucide-react';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState('');
   const [records, setRecords] = useState([]);
   const [editingRecord, setEditingRecord] = useState(null);
-  const [activeTab, setActiveTab] = useState('form'); // 'form' para el formulario grande, 'dashboard' para el historial/métricas
 
   const loadRecords = async () => {
     try {
@@ -46,7 +45,6 @@ export default function App() {
         await createRecord(formData);
       }
       await loadRecords();
-      setActiveTab('dashboard'); // Redirige al Dashboard automáticamente para ver el registro guardado
     } catch (error) {
       console.error("Error al guardar registro:", error);
       throw error;
@@ -66,7 +64,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Encabezado */}
+      {/* Encabezado Principal */}
       <header className="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -96,61 +94,24 @@ export default function App() {
         </div>
       </header>
 
-      {/* Pestañas de Navegación Aparte */}
-      <div className="border-b border-slate-800 bg-slate-900/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab('form')}
-            className={`py-3.5 px-5 font-semibold text-sm border-b-2 flex items-center gap-2 transition-all ${
-              activeTab === 'form'
-                ? 'border-emerald-400 text-emerald-400 bg-emerald-500/5'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <PlusCircle size={18} />
-            <span>Nuevo Registro (Formulario)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('dashboard')}
-            className={`py-3.5 px-5 font-semibold text-sm border-b-2 flex items-center gap-2 transition-all ${
-              activeTab === 'dashboard'
-                ? 'border-emerald-400 text-emerald-400 bg-emerald-500/5'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <BarChart3 size={18} />
-            <span>Dashboard e Historial</span>
-          </button>
-        </div>
-      </div>
+      {/* Todo en la misma página */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8">
+        {/* 1. Métricas e Histogramas */}
+        <Estadisticas records={records} />
 
-      {/* Contenido Principal Separdos por Vista */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
-        {activeTab === 'form' && (
-          <div className="max-w-3xl mx-auto animate-in fade-in duration-200">
-            <RegistroForm
-              onSubmit={handleCreateOrUpdate}
-              editingRecord={editingRecord}
-              onCancelEdit={() => setEditingRecord(null)}
-            />
-          </div>
-        )}
+        {/* 2. Formulario Grande a Ancho Completo */}
+        <RegistroForm
+          onSubmit={handleCreateOrUpdate}
+          editingRecord={editingRecord}
+          onCancelEdit={() => setEditingRecord(null)}
+        />
 
-        {activeTab === 'dashboard' && (
-          <div className="space-y-8 animate-in fade-in duration-200">
-            <Estadisticas records={records} />
-            <RegistrosTabla
-              records={records}
-              onDelete={handleDelete}
-              onEdit={(record) => {
-                setEditingRecord(record);
-                setActiveTab('form');
-              }}
-            />
-          </div>
-        )}
+        {/* 3. Tabla con el Historial de Registros Agregados */}
+        <RegistrosTabla
+          records={records}
+          onDelete={handleDelete}
+          onEdit={(record) => setEditingRecord(record)}
+        />
       </main>
     </div>
   );
