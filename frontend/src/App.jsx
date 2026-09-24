@@ -8,15 +8,15 @@ import { LayoutGrid, BarChart3, LogOut, User } from 'lucide-react';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUser, setCurrentUser] = useState('admin');
+  const [currentUser, setCurrentUser] = useState(null); // Objeto usuario { id, username }
   const [records, setRecords] = useState([]);
   const [editingRecord, setEditingRecord] = useState(null);
-  // 'gestion' es ahora la pantalla inicial por defecto
-  const [activeTab, setActiveTab] = useState('gestion'); 
+  const [activeTab, setActiveTab] = useState('gestion');
 
   const loadRecords = async () => {
+    if (!currentUser?.id) return;
     try {
-      const data = await fetchRecords();
+      const data = await fetchRecords(currentUser.id);
       setRecords(data);
     } catch (error) {
       console.error("Error al obtener registros:", error);
@@ -24,14 +24,15 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && currentUser) {
       loadRecords();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, currentUser]);
 
   const handleDelete = async (id) => {
+    if (!currentUser?.id) return;
     try {
-      await deleteRecord(id);
+      await deleteRecord(id, currentUser.id);
       setRecords((prev) => prev.filter((r) => r.id !== id));
     } catch (error) {
       console.error("Error al eliminar registro:", error);
@@ -39,12 +40,13 @@ export default function App() {
   };
 
   const handleCreateOrUpdate = async (formData) => {
+    if (!currentUser?.id) return;
     try {
       if (editingRecord) {
-        await updateRecord(editingRecord.id, formData);
+        await updateRecord(editingRecord.id, formData, currentUser.id);
         setEditingRecord(null);
       } else {
-        await createRecord(formData);
+        await createRecord(formData, currentUser.id);
       }
       await loadRecords();
     } catch (error) {
@@ -56,10 +58,10 @@ export default function App() {
   if (!isAuthenticated) {
     return (
       <Login
-        onLoginSuccess={(username) => {
-          setCurrentUser(username || 'admin');
-          setActiveTab('gestion'); // Asegura la pestaña Gestión al iniciar sesión
+        onLoginSuccess={(user) => {
+          setCurrentUser(user);
           setIsAuthenticated(true);
+          setActiveTab('gestion');
         }}
       />
     );
@@ -67,11 +69,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Cabecera */}
       <header className="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-8 py-3">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
           
-          {/* Logo y Navegación de Pestañas */}
           <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-400 font-extrabold flex items-center justify-center border border-teal-500/30 text-sm tracking-wider">
@@ -112,14 +112,16 @@ export default function App() {
             </div>
           </div>
 
-          {/* Estado de Usuario */}
           <div className="flex items-center gap-3 self-end sm:self-auto">
             <div className="flex items-center gap-2 text-xs bg-slate-800/60 px-3 py-1.5 rounded-xl border border-slate-700/60 text-slate-300">
               <User size={14} className="text-teal-400" />
-              <span>Hola, <strong className="text-white">{currentUser}</strong></span>
+              <span>Hola, <strong className="text-white">{currentUser?.username || 'Usuario'}</strong></span>
             </div>
             <button
-              onClick={() => setIsAuthenticated(false)}
+              onClick={() => {
+                setIsAuthenticated(false);
+                setCurrentUser(null);
+              }}
               className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-red-400 transition-colors py-1.5 px-3 rounded-xl border border-slate-800 hover:border-red-500/30 bg-slate-900/50"
               title="Cerrar sesión"
             >
@@ -131,7 +133,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Contenido según Pestaña */}
       <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6 flex-1 w-full">
         {activeTab === 'gestion' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">

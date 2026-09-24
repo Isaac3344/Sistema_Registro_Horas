@@ -1,63 +1,48 @@
-const API_URL = import.meta.env.VITE_API_URL || "https://backend-registro-horas.onrender.com";
+const API_URL = "https://backend-registro-horas.onrender.com";
 
-export async function loginUser(credentials) {
-  const response = await fetch(`${API_URL}/login`, {
+export const loginUser = async (username, password) => {
+  const res = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(credentials),
+    body: JSON.stringify({ username, password }),
   });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Error de autenticación");
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Error al iniciar sesión");
   }
-  return await response.json();
-}
+  return await res.json();
+};
 
-export async function fetchRecords() {
-  const response = await fetch(`${API_URL}/records`);
-  if (!response.ok) throw new Error("Error al obtener registros");
-  return await response.json();
-}
+export const fetchRecords = async (userId) => {
+  const res = await fetch(`${API_URL}/records?user_id=${userId}`);
+  if (!res.ok) throw new Error("Error al obtener registros");
+  return await res.json();
+};
 
-export async function createRecord(record) {
-  const payload = {
-    worker_name: String(record.worker_name || record.workerName || record.nombre || "").trim(),
-    work_date: String(record.work_date || record.workDate || record.fecha || ""),
-    entry_time: String(record.entry_time || record.entryTime || record.hora_entrada || ""),
-    exit_time: String(record.exit_time || record.exitTime || record.hora_salida || ""),
-    lunch_break: String(record.lunch_break || record.lunchBreak || record.almuerzo || "0"),
-    cost_center: String(record.cost_center || record.costCenter || record.centro_costo || ""),
-    description: String(record.description || record.descripcion || ""),
-    calculated_hours: parseFloat(record.calculated_hours || record.calculatedHours || 0)
-  };
-
-  const response = await fetch(`${API_URL}/records`, {
+export const createRecord = async (data, userId) => {
+  const res = await fetch(`${API_URL}/records?user_id=${userId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Error al crear registro");
-  }
-  return await response.json();
-}
+  if (!res.ok) throw new Error("Error al crear registro");
+  return await res.json();
+};
 
-export async function updateRecord(id, record) {
-  const response = await fetch(`${API_URL}/records/${id}`, {
+export const updateRecord = async (id, data, userId) => {
+  const res = await fetch(`${API_URL}/records/${id}?user_id=${userId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(record),
+    body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error("Error al actualizar registro");
-  return await response.json();
-}
+  if (!res.ok) throw new Error("Error al actualizar registro");
+  return await res.json();
+};
 
-export async function deleteRecord(id) {
-  const response = await fetch(`${API_URL}/records/${id}`, {
+export const deleteRecord = async (id, userId) => {
+  const res = await fetch(`${API_URL}/records/${id}?user_id=${userId}`, {
     method: "DELETE",
-    headers: { "Content-Type": "application/json" },
   });
-  if (!response.ok) throw new Error("Error al eliminar registro");
-  return await response.json();
-}
+  if (!res.ok) throw new Error("Error al eliminar registro");
+  return await res.json();
+};

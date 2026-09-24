@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
 from database import Base
 
 class User(Base):
@@ -6,8 +7,9 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    is_active = Column(Boolean, default=True)
+    password = Column(String, nullable=False)
+
+    records = relationship("Record", back_populates="owner")
 
 class Record(Base):
     __tablename__ = "records"
@@ -17,7 +19,10 @@ class Record(Base):
     work_date = Column(String, nullable=False)
     entry_time = Column(String, nullable=False)
     exit_time = Column(String, nullable=False)
-    lunch_break = Column(String, nullable=False)
-    cost_center = Column(String, default="")
-    description = Column(String, default="")
-    calculated_hours = Column(Float, default=0.0)
+    calculated_hours = Column(Float, nullable=False)
+    cost_center = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    
+    # Vinculación exclusiva al usuario
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    owner = relationship("User", back_populates="records")
