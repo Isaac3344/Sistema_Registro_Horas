@@ -247,3 +247,16 @@ def delete_record(record_id: int, user_id: int = Depends(get_current_user_id), d
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, user_id_auth: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        db.delete(user)
+        db.commit()
+        return {"message": "Usuario eliminado correctamente"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

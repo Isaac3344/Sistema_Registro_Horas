@@ -79,6 +79,25 @@ export default function App() {
     }
   };
 
+  const handleDeleteUser = async (userId, username) => {
+    if (window.confirm(`¿Estás seguro de eliminar al usuario "${username}"?`)) {
+      try {
+        const response = await fetch(`https://backend-registro-horas.onrender.com/users/${userId}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (response.ok) {
+          loadUsers();
+        } else {
+          const errData = await response.json();
+          alert("Error al eliminar usuario: " + (errData.detail || "Error desconocido"));
+        }
+      } catch (err) {
+        alert("Error de conexión: " + err.message);
+      }
+    }
+  };
+
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError("");
@@ -677,6 +696,7 @@ export default function App() {
               </form>
             </div>
 
+            {/* Listado de Usuarios con Botón de Eliminar */}
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
               <h2 className="text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
               {usersList.length === 0 ? (
@@ -690,6 +710,7 @@ export default function App() {
                         <th className="pb-3 px-3">Usuario</th>
                         <th className="pb-3 px-3">Rol</th>
                         <th className="pb-3 px-3">Cédula Vinculada</th>
+                        <th className="pb-3 px-3 text-right">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 text-sm">
@@ -703,6 +724,14 @@ export default function App() {
                             </span>
                           </td>
                           <td className="py-3 px-3 text-slate-300 font-mono text-xs">{u.cedula || "-"}</td>
+                          <td className="py-3 px-3 text-right">
+                            <button
+                              onClick={() => handleDeleteUser(u.id, u.username)}
+                              className="text-red-400 hover:text-red-300 text-xs font-semibold px-3 py-1 bg-red-500/10 rounded-lg transition"
+                            >
+                              Eliminar
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
