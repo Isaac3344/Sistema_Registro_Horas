@@ -11,14 +11,13 @@ from sqlalchemy import text
 import models
 from database import engine, get_db
 
-# --- CONFIGURACIÓN DE SEGURIDAD JWT ---
 SECRET_KEY = "tu_clave_secreta_super_segura_cambiala_en_produccion"
 ALGORITHM = "HS256"
 security = HTTPBearer()
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=7) # El token dura 7 días
+    expire = datetime.utcnow() + timedelta(days=7)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -35,12 +34,10 @@ def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(secu
     except Exception:
         raise HTTPException(status_code=401, detail="No autorizado")
 
-# Validación para bloquear permisos de escritura a usuarios de solo lectura (viewer_*)
 def verify_write_permission(user_id: int, db: Session):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if user and user.username.lower().startswith("viewer_"):
         raise HTTPException(status_code=403, detail="Acceso denegado: este usuario es de solo lectura.")
-# --------------------------------------
 
 app = FastAPI(title="API Multiusuario Segura con JWT y Roles")
 
@@ -61,7 +58,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
-# Saneamiento automático de BD Neon
 try:
     models.Base.metadata.create_all(bind=engine)
     all_columns = [
@@ -84,7 +80,6 @@ except Exception:
 def read_root():
     return {"status": "online", "message": "API JWT Segura activa con soporte de roles"}
 
-# 1. REGISTRO DE USUARIOS
 @app.post("/register")
 def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -104,7 +99,6 @@ def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": new_user.id})
     return {"id": new_user.id, "username": new_user.username, "token": access_token}
 
-# 2. INICIO DE SESIÓN
 @app.post("/login")
 def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -120,15 +114,25 @@ def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.id})
     return {"id": user.id, "username": user.username, "token": access_token}
 
-# 3. OBTENER REGISTROS (Permitido para todos los usuarios autenticados)
 @app.get("/records")
 def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
-        return db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.id.desc()).all()
+        current_user = db.query(models.User).filter(models.User.id == user_id).first()
+        admin_user = db.query(models.User).filter(~models.User.username.ilike("viewer_%")).order_by(models.User.id.asc()).first()
+        admin_id = admin_user.id if admin_user else user_id
+
+        if current_user and current_user.username.lower().startswith("viewer_"):
+            identification = current_user.username.lower().replace("viewer_", "").strip()
+            records = db.query(models.Record).filter(
+                models.Record.user_id == admin_id,
+                models.Record.cost_center.ilike(f"%{identification}%")
+            ).order_by(models.Record.id.desc()).all()
+            return records
+        else:
+            return db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.id.desc()).all()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# 4. CREAR REGISTRO (Bloqueado si es usuario viewer_*)
 @app.post("/records")
 def create_record(record_data: Dict[str, Any], user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     verify_write_permission(user_id, db)
@@ -153,7 +157,6 @@ def create_record(record_data: Dict[str, Any], user_id: int = Depends(get_curren
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-# 5. ACTUALIZAR REGISTRO (Bloqueado si es usuario viewer_*)
 @app.put("/records/{record_id}")
 def update_record(record_id: int, record_data: Dict[str, Any], user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     verify_write_permission(user_id, db)
@@ -179,7 +182,6 @@ def update_record(record_id: int, record_data: Dict[str, Any], user_id: int = De
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-# 6. ELIMINAR REGISTRO (Bloqueado si es usuario viewer_*)
 @app.delete("/records/{record_id}")
 def delete_record(record_id: int, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     verify_write_permission(user_id, db)

@@ -33,7 +33,6 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState(null);
 
-  // Detectar si el usuario actual es de solo lectura (ej. empieza con "viewer_")
   const currentUsername = localStorage.getItem("username") || "";
   const isReadOnly = currentUsername.toLowerCase().startsWith("viewer_");
 
@@ -68,7 +67,7 @@ export default function App() {
         data = await registerUser(usernameInput, passwordInput);
       }
       setToken(data.token);
-      localStorage.setItem("username", usernameInput); // Guardar usuario actual
+      localStorage.setItem("username", usernameInput);
       setUsernameInput("");
       setPasswordInput("");
     } catch (err) {
@@ -97,7 +96,7 @@ export default function App() {
   const handleSubmitRecord = async (e) => {
     e.preventDefault();
     if (isReadOnly) {
-      alert("Tu cuenta es de solo lectura. No puedes crear registros.");
+      alert("Tu cuenta es de solo lectura.");
       return;
     }
     try {
@@ -139,10 +138,7 @@ export default function App() {
   };
 
   const handleDelete = async (id) => {
-    if (isReadOnly) {
-      alert("Tu cuenta es de solo lectura.");
-      return;
-    }
+    if (isReadOnly) return;
     if (window.confirm("¿Estás seguro de eliminar este registro?")) {
       try {
         await deleteRecord(id);
@@ -193,7 +189,7 @@ export default function App() {
 
   const handleExportExcel = () => {
     if (filteredRecords.length === 0) {
-      alert("No hay registros filtrados para exportar.");
+      alert("No hay registros para exportar.");
       return;
     }
 
@@ -257,10 +253,10 @@ export default function App() {
         <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
           <div className="text-center mb-8">
             <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-3 shadow-inner">
-              🔒
+              ⚡
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              {isLoginView ? "Iniciar Sesión" : "Crear Cuenta"}
+              {isLoginView ? "Bienvenido de nuevo" : "Crea tu Cuenta"}
             </h1>
             <p className="text-slate-400 text-sm mt-1">Plataforma Profesional de Horas</p>
           </div>
@@ -280,7 +276,7 @@ export default function App() {
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
-                placeholder="Ingresa tu usuario (ej. viewer_cliente)"
+                placeholder="Ingresa tu usuario (ej. viewer_12345)"
               />
             </div>
 
@@ -351,7 +347,7 @@ export default function App() {
           <div>
             <h1 className="font-bold text-white text-lg">APP REGISTRO</h1>
             <p className="text-xs text-slate-400">
-              {isReadOnly ? "👁️ Modo Solo Lectura (Supervisor/Cliente)" : "Control de Jornadas y Costos"}
+              {isReadOnly ? "👁️ Modo Solo Lectura (Empleado/Cliente)" : "Control de Jornadas y Costos"}
             </p>
           </div>
         </div>
@@ -387,7 +383,6 @@ export default function App() {
         {currentTab === "gestion" ? (
           <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-6`}>
             
-            {/* Si es solo lectura, se oculta el formulario izquierdo */}
             {!isReadOnly && (
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit print:hidden">
                 <div className="flex justify-between items-center mb-4">
@@ -447,13 +442,13 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Centro de Costo</label>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Centro de Costo / Código ID</label>
                     <input
                       type="text"
                       value={costCenter}
                       onChange={(e) => setCostCenter(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                      placeholder="Ej. Operaciones"
+                      placeholder="Ej. Operaciones o Cédula"
                     />
                   </div>
 
@@ -498,7 +493,7 @@ export default function App() {
                 <div>
                   <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
                   <p className="text-xs text-slate-400">
-                    {isReadOnly ? "Visualizando registros en modo lectura" : "Filtra por nombre, semana o mes y exporta tus datos"}
+                    {isReadOnly ? "Visualizando tus registros exclusivos" : "Filtra por nombre, semana o mes y exporta tus datos"}
                   </p>
                 </div>
 
@@ -517,7 +512,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Panel de Filtros */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 print:hidden">
                 <input
                   type="text"
