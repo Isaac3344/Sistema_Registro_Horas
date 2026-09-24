@@ -6,13 +6,34 @@ from sqlalchemy import text
 import models
 from database import engine, get_db
 
-# Migración automática para quitar la restricción NOT NULL de hashed_password y agregar user_id
+# Sincronización y migración automática para esquemas en Neon PostgreSQL
 try:
     models.Base.metadata.create_all(bind=engine)
     with engine.connect() as conn:
-        conn.execute(text("ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;"))
+        # 1. Ajustes en la tabla users
+        try:
+            conn.execute(text("ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;"))
+        except Exception:
+            pass
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR;"))
+
+        # 2. Asegurar columnas en la tabla records
         conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS user_id INTEGER;"))
+        conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS worker_name VARCHAR;"))
+        conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS work_date VARCHAR;"))
+        conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS entry_time VARCHAR;"))
+        conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS exit_time VARCHAR;"))
+        conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS calculated_hours FLOAT;"))
+        conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS cost_center VARCHAR;"))
+        conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS description VARCHAR;"))
+
+        # 3. Eliminar restricciones NOT NULL de columnas antiguas en español si existían
+        spanish_cols = ["trabajador", "fecha", "hora_entrada", "hora_salida", "horas", "centro_costo", "descripcion"]
+        for col in spanish_cols:
+            try:
+                conn.execute(text(f"ALTER TABLE records ALTER COLUMN {col} DROP NOT NULL;"))
+            except Exception:
+                pass
         conn.commit()
 except Exception as e:
     print(f"Sincronizando estructura de base de datos: {e}")
@@ -31,7 +52,7 @@ app.add_middleware(
 def read_root():
     return {"status": "online", "message": "API Multiusuario activa"}
 
-# 1. ENDPOINT DE REGISTRO
+# 1. REGISTRO DE USUARIO
 @app.post("/register")
 def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -44,7 +65,6 @@ def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
 
-    # Guardar en ambos campos para resolver cualquier restricción de esquema previo
     new_user = models.User(username=username, password=password, hashed_password=password)
     db.add(new_user)
     db.commit()
@@ -52,7 +72,7 @@ def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
 
     return {"id": new_user.id, "username": new_user.username, "message": "Usuario registrado exitosamente"}
 
-# 2. ENDPOINT DE LOGIN
+# 2. LOGIN DE USUARIO
 @app.post("/login")
 def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -72,7 +92,7 @@ def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
 
     return {"id": user.id, "username": user.username, "message": "Autenticación exitosa"}
 
-# OBTENER REGISTROS DEL USUARIO
+# OBTENER REGISTROS EXCLUSIVOS DEL USUARIO
 @app.get("/records")
 def get_records(user_id: int, db: Session = Depends(get_db)):
     try:
@@ -80,19 +100,37 @@ def get_records(user_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# CREAR REGISTRO PARA EL USUARIO
+# CREAR REGISTRO VINCULADO AL USUARIO
 @app.post("/records")
 def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depends(get_db)):
     try:
-        record_data["user_id"] = user_id
-        db_record = models.Record(**record_data)
+        w_name = record_data.get("worker_name") or record_data.get("trabajador") or ""
+        w_date = record_data.get("work_date") or record_data.get("fecha") or ""
+        e_time = record_data.get("entry_time") or record_data.get("hora_entrada") or ""
+        x_time = record_data.get("exit_time") or record_data.get("hora_salida") or ""
+        calc_hrs = float(record_data.get("calculated_hours") or record_data.get("horas") or 0.0)
+        c_center = record_data.get("cost_center") or record_data.get("centro_costo") or ""
+        desc = record_data.get("description") or record_data.get("descripcion") or ""
+
+        db_record = models.Record(
+            worker_name=w_name,
+            work_date=w_date,
+            entry_time=e_time,
+            exit_time=x_time,
+            calculated_hours=calc_hrs,
+            cost_center=c_center,
+            description=desc,
+            user_id=user_id
+        )
+
         db.add(db_record)
         db.commit()
         db.refresh(db_record)
         return db_record
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error al crear registro: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al guardar registro: {str(e)}")
 
 # ACTUALIZAR REGISTRO DEL USUARIO
 @app.put("/records/{record_id}")
@@ -102,9 +140,13 @@ def update_record(record_id: int, record_data: Dict[str, Any], user_id: int, db:
         if not db_record:
             raise HTTPException(status_code=404, detail="Registro no encontrado")
 
-        for key, value in record_data.items():
-            if hasattr(db_record, key) and key not in ["id", "user_id"]:
-                setattr(db_record, key, value)
+        db_record.worker_name = record_data.get("worker_name") or record_data.get("trabajador") or db_record.worker_name
+        db_record.work_date = record_data.get("work_date") or record_data.get("fecha") or db_record.work_date
+        db_record.entry_time = record_data.get("entry_time") or record_data.get("hora_entrada") or db_record.entry_time
+        db_record.exit_time = record_data.get("exit_time") or record_data.get("hora_salida") or db_record.exit_time
+        db_record.calculated_hours = float(record_data.get("calculated_hours") or record_data.get("horas") or db_record.calculated_hours)
+        db_record.cost_center = record_data.get("cost_center") or record_data.get("centro_costo") or db_record.cost_center
+        db_record.description = record_data.get("description") or record_data.get("descripcion") or db_record.description
 
         db.commit()
         db.refresh(db_record)
