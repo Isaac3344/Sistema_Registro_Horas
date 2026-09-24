@@ -14,11 +14,9 @@ export default function App() {
   const [isLoginView, setIsLoginView] = useState(true);
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
-  const [roleInput, setRoleInput] = useState("admin"); // "admin" o "employee"
-  const [cedulaInput, setCedulaInput] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [currentTab, setCurrentTab] = useState("gestion");
+  const [currentTab, setCurrentTab] = useState("gestion"); // "gestion", "estadisticas", "empleados"
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   
@@ -34,6 +32,12 @@ export default function App() {
   const [costCenter, setCostCenter] = useState("");
   const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState(null);
+
+  // Estados para que el Admin cree cuentas de Empleados
+  const [empUsername, setEmpUsername] = useState("");
+  const [empPassword, setEmpPassword] = useState("");
+  const [empCedula, setEmpCedula] = useState("");
+  const [empSuccessMsg, setEmpSuccessMsg] = useState("");
 
   const currentUserRole = localStorage.getItem("userRole") || "admin";
   const isReadOnly = currentUserRole === "employee";
@@ -62,28 +66,32 @@ export default function App() {
     e.preventDefault();
     setAuthError("");
     try {
-      let data;
-      if (isLoginView) {
-        data = await loginUser(usernameInput, passwordInput);
-      } else {
-        if (roleInput === "employee" && !cedulaInput) {
-          setAuthError("La cédula es obligatoria para cuentas de empleado.");
-          return;
-        }
-        data = await registerUser({
-          username: usernameInput,
-          password: passwordInput,
-          role: roleInput,
-          cedula: cedulaInput
-        });
-      }
+      let data = await loginUser(usernameInput, passwordInput);
       setToken(data.token);
       localStorage.setItem("userRole", data.role || "admin");
       setUsernameInput("");
       setPasswordInput("");
-      setCedulaInput("");
     } catch (err) {
       setAuthError(err.message);
+    }
+  };
+
+  const handleCreateEmployee = async (e) => {
+    e.preventDefault();
+    setEmpSuccessMsg("");
+    try {
+      await registerUser({
+        username: empUsername,
+        password: empPassword,
+        role: "employee",
+        cedula: empCedula
+      });
+      setEmpSuccessMsg(`¡Acceso creado exitosamente para el empleado ${empUsername}!`);
+      setEmpUsername("");
+      setEmpPassword("");
+      setEmpCedula("");
+    } catch (err) {
+      alert("Error al crear empleado: " + err.message);
     }
   };
 
@@ -251,7 +259,7 @@ export default function App() {
   };
 
   const handleExportPDF = () => window.print();
-  const handleImport = () => alert("Función no disponible para cuentas de empleados.");
+  const handleImport = () => alert("Función no disponible.");
 
   if (!token) {
     return (
@@ -264,9 +272,7 @@ export default function App() {
             <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-2 shadow-inner">
               ⚡
             </div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              {isLoginView ? "Iniciar Sesión" : "Crear Cuenta"}
-            </h1>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">Iniciar Sesión</h1>
             <p className="text-slate-400 text-sm mt-1">Plataforma Profesional de Horas</p>
           </div>
 
@@ -301,52 +307,13 @@ export default function App() {
               />
             </div>
 
-            {!isLoginView && (
-              <>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Tipo de Cuenta</label>
-                  <select
-                    value={roleInput}
-                    onChange={(e) => setRoleInput(e.target.value)}
-                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
-                  >
-                    <option value="admin">Administrador (Control Total)</option>
-                    <option value="employee">Empleado / Solo Ver</option>
-                  </select>
-                </div>
-
-                {roleInput === "employee" && (
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Cédula o Identificación *</label>
-                    <input
-                      type="text"
-                      required
-                      value={cedulaInput}
-                      onChange={(e) => setCedulaInput(e.target.value)}
-                      className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
-                      placeholder="Ingresa tu número de cédula"
-                    />
-                  </div>
-                )}
-              </>
-            )}
-
             <button
               type="submit"
               className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200"
             >
-              {isLoginView ? "Entrar al Sistema" : "Registrarse"}
+              Entrar al Sistema
             </button>
           </form>
-
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => setIsLoginView(!isLoginView)}
-              className="text-sm text-slate-400 hover:text-indigo-400 transition"
-            >
-              {isLoginView ? "¿No tienes cuenta? Regístrate aquí" : "¿Ya tienes cuenta? Inicia sesión"}
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -386,7 +353,7 @@ export default function App() {
           <div>
             <h1 className="font-bold text-white text-lg">APP REGISTRO</h1>
             <p className="text-xs text-slate-400">
-              {isReadOnly ? "👁️ Modo Empleado (Solo Visualización por Cédula)" : "Control de Jornadas y Costos"}
+              {isReadOnly ? "👁️ Modo Empleado (Solo Vista)" : "Panel de Administrador"}
             </p>
           </div>
         </div>
@@ -408,6 +375,16 @@ export default function App() {
           >
             📊 Estadísticas
           </button>
+          {!isReadOnly && (
+            <button
+              onClick={() => setCurrentTab("empleados")}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                currentTab === "empleados" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              👤 Crear Acceso Empleado
+            </button>
+          )}
         </div>
 
         <button
@@ -488,7 +465,7 @@ export default function App() {
                       value={costCenter}
                       onChange={(e) => setCostCenter(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                      placeholder="Ej. Cédula del empleado"
+                      placeholder="Cédula del empleado"
                     />
                   </div>
 
@@ -509,21 +486,6 @@ export default function App() {
                   >
                     {editingId ? "Actualizar Registro" : "Guardar Registro"}
                   </button>
-
-                  {editingId && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingId(null);
-                        setWorkerName("");
-                        setCostCenter("");
-                        setDescription("");
-                      }}
-                      className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-xl text-sm transition"
-                    >
-                      Cancelar Edición
-                    </button>
-                  )}
                 </form>
               </div>
             )}
@@ -532,17 +494,10 @@ export default function App() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 print:hidden">
                 <div>
                   <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
-                  <p className="text-xs text-slate-400">
-                    {isReadOnly ? "Visualizando únicamente tus jornadas asociadas" : "Filtra por nombre, semana o mes y exporta tus datos"}
-                  </p>
+                  <p className="text-xs text-slate-400">Consulta y exporta tus jornadas</p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {!isReadOnly && (
-                    <button onClick={handleImport} className="bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
-                      📥 Importar
-                    </button>
-                  )}
                   <button onClick={handleExportExcel} className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
                     📊 Excel ({filteredRecords.length})
                   </button>
@@ -604,7 +559,7 @@ export default function App() {
               {loading ? (
                 <p className="text-center text-slate-500 py-8">Cargando registros...</p>
               ) : filteredRecords.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">No se encontraron registros con los filtros seleccionados.</p>
+                <p className="text-center text-slate-500 py-8">No se encontraron registros.</p>
               ) : (
                 <div className="overflow-x-auto flex-1">
                   <table className="w-full text-left border-collapse">
@@ -622,30 +577,16 @@ export default function App() {
                     <tbody className="divide-y divide-slate-800/60 text-sm">
                       {filteredRecords.map((rec) => (
                         <tr key={rec.id} className="hover:bg-slate-800/40 transition">
-                          <td className="py-3 px-3 font-semibold text-white">
-                            {rec.worker_name || rec.trabajador}
-                          </td>
+                          <td className="py-3 px-3 font-semibold text-white">{rec.worker_name || rec.trabajador}</td>
                           <td className="py-3 px-3 text-slate-300">{rec.work_date || rec.fecha}</td>
-                          <td className="py-3 px-3 text-slate-400 text-xs">
-                            {rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}
-                          </td>
-                          <td className="py-3 px-3 font-bold text-emerald-400">
-                            {Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs
-                          </td>
-                          <td className="py-3 px-3 text-slate-400 text-xs">
-                            {rec.cost_center || rec.centro_costo || "-"}
-                          </td>
-                          <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">
-                            {rec.description || rec.descripcion || "-"}
-                          </td>
+                          <td className="py-3 px-3 text-slate-400 text-xs">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
+                          <td className="py-3 px-3 font-bold text-emerald-400">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs</td>
+                          <td className="py-3 px-3 text-slate-400 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
+                          <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">{rec.description || rec.descripcion || "-"}</td>
                           {!isReadOnly && (
                             <td className="py-3 px-3 text-right space-x-2 print:hidden">
-                              <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">
-                                Editar
-                              </button>
-                              <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">
-                                Borrar
-                              </button>
+                              <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">Editar</button>
+                              <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">Borrar</button>
                             </td>
                           )}
                         </tr>
@@ -656,12 +597,69 @@ export default function App() {
               )}
             </div>
           </div>
+        ) : currentTab === "empleados" ? (
+          /* ================= PESTAÑA PARA QUE EL ADMIN CREE EMPLEADOS ================= */
+          <div className="max-w-md mx-auto bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+            <h2 className="text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
+            <p className="text-xs text-slate-400 mb-6">Genera un usuario de solo vista vinculado a su número de cédula.</p>
+
+            {empSuccessMsg && (
+              <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm text-center">
+                {empSuccessMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateEmployee} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario del Empleado</label>
+                <input
+                  type="text"
+                  required
+                  value={empUsername}
+                  onChange={(e) => setEmpUsername(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  placeholder="Ej. juan_empleado"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
+                <input
+                  type="password"
+                  required
+                  value={empPassword}
+                  onChange={(e) => setEmpPassword(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Cédula o Identificación del Empleado *</label>
+                <input
+                  type="text"
+                  required
+                  value={empCedula}
+                  onChange={(e) => setEmpCedula(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                  placeholder="Ej. 1728394850 (Debe coincidir con su Centro de Costo)"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition duration-200"
+              >
+                Crear Cuenta de Empleado
+              </button>
+            </form>
+          </div>
         ) : (
           <div className="space-y-6 max-w-5xl mx-auto">
             <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center justify-between">
               <div>
                 <h3 className="text-white font-bold text-base">Filtrar Estadísticas</h3>
-                <p className="text-xs text-slate-400">Selecciona un mes específico o visualiza todo el histórico</p>
+                <p className="text-xs text-slate-400">Selecciona un mes específico</p>
               </div>
               <select
                 value={selectedMonth}
@@ -681,9 +679,7 @@ export default function App() {
                   <p className="text-slate-400 text-sm font-medium">Horas del Periodo</p>
                   <h3 className="text-4xl font-extrabold text-emerald-400 mt-1">{totalHorasStats.toFixed(1)} hrs</h3>
                 </div>
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-2xl">
-                  ⏱️
-                </div>
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-2xl">⏱️</div>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
@@ -691,58 +687,8 @@ export default function App() {
                   <p className="text-slate-400 text-sm font-medium">Jornadas en el Periodo</p>
                   <h3 className="text-4xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
                 </div>
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-2xl">
-                  📊
-                </div>
+                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-2xl">📊</div>
               </div>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h3 className="text-lg font-bold text-white mb-4">👤 Distribución de Horas por Trabajador</h3>
-              {Object.keys(horasPorTrabajador).length === 0 ? (
-                <p className="text-slate-500 text-sm py-4 text-center">No hay datos para este mes.</p>
-              ) : (
-                <div className="space-y-4">
-                  {Object.entries(horasPorTrabajador).map(([nombre, horas]) => {
-                    const porcentaje = totalHorasStats > 0 ? (horas / totalHorasStats) * 100 : 0;
-                    return (
-                      <div key={nombre}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-200 font-medium">{nombre}</span>
-                          <span className="text-emerald-400 font-bold">{horas.toFixed(1)} hrs ({porcentaje.toFixed(0)}%)</span>
-                        </div>
-                        <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5">
-                          <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style={{ width: `${porcentaje}%` }}></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h3 className="text-lg font-bold text-white mb-4">🏢 Horas por Centro de Costo</h3>
-              {Object.keys(horasPorCentro).length === 0 ? (
-                <p className="text-slate-500 text-sm py-4 text-center">No hay datos para este mes.</p>
-              ) : (
-                <div className="space-y-4">
-                  {Object.entries(horasPorCentro).map(([centro, horas]) => {
-                    const porcentaje = totalHorasStats > 0 ? (horas / totalHorasStats) * 100 : 0;
-                    return (
-                      <div key={centro}>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-slate-200 font-medium">{centro || "Sin especificar"}</span>
-                          <span className="text-indigo-400 font-bold">{horas.toFixed(1)} hrs ({porcentaje.toFixed(0)}%)</span>
-                        </div>
-                        <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5">
-                          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${porcentaje}%` }}></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           </div>
         )}

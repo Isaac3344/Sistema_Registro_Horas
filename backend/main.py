@@ -59,7 +59,6 @@ async def global_exception_handler(request: Request, exc: Exception):
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
-# Saneamiento y creación automática de columnas obligatorias en la Base de Datos
 try:
     models.Base.metadata.create_all(bind=engine)
     with engine.connect() as conn:
@@ -67,11 +66,11 @@ try:
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR DEFAULT 'admin';"))
         conn.commit()
 except Exception as e:
-    print(f"Nota de migración BD: {e}")
+    print(f"Nota BD: {e}")
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "message": "API JWT Segura activa"}
+    return {"status": "online", "message": "API Segura activa"}
 
 @app.post("/register")
 def register(credentials: Dict[str, Any], db: Session = Depends(get_db)):
@@ -83,22 +82,14 @@ def register(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     if not username or not password:
         raise HTTPException(status_code=400, detail="Usuario y contraseña requeridos")
 
-    if role == "employee" and not cedula:
-        raise HTTPException(status_code=400, detail="La cédula es obligatoria para cuentas de empleado")
-
     if db.query(models.User).filter(models.User.username == username).first():
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
 
-    new_user = models.User(
-        username=username, 
-        password=password, 
-        hashed_password=password
-    )
+    new_user = models.User(username=username, password=password, hashed_password=password)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    # Asignar rol y cédula de forma segura usando SQL directo por si el ORM no los reconoce aún
     try:
         with engine.connect() as conn:
             conn.execute(text("UPDATE users SET role = :role, cedula = :cedula WHERE id = :id"), 
