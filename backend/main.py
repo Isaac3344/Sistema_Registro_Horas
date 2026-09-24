@@ -8,10 +8,8 @@ from sqlalchemy import text
 import models
 from database import engine, get_db
 
-# Inicializar aplicación FastAPI
 app = FastAPI(title="API Multiusuario Control de Horas")
 
-# Configuración universal de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -20,49 +18,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Manejador global de excepciones para garantizar que SIEMPRE se devuelvan cabeceras CORS
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     print(f"Unhandled Exception: {exc}\n{traceback.format_exc()}")
     return JSONResponse(
         status_code=500,
-        content={"detail": f"Error interno del servidor: {str(exc)}"},
+        content={"detail": f"Error en servidor: {str(exc)}"},
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
-# Sincronización automática de esquema en Neon PostgreSQL
+# Saneamiento automático de base de datos Neon PostgreSQL
 try:
     models.Base.metadata.create_all(bind=engine)
-    sqls = [
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR;",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS hashed_password VARCHAR;",
-        "ALTER TABLE users ALTER COLUMN password DROP NOT NULL;",
-        "ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS user_id INTEGER;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS worker_name VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS work_date VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS entry_time VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS exit_time VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS calculated_hours DOUBLE PRECISION;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS cost_center VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS description VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS trabajador VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS fecha VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS hora_salida VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS horas DOUBLE PRECISION;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS centro_costo VARCHAR;",
-        "ALTER TABLE records ADD COLUMN IF NOT EXISTS descripcion VARCHAR;",
+    all_columns = [
+        "trabajador", "fecha", "hora_entrada", "hora_salida", "horas", "centro_costo", "descripcion",
+        "worker_name", "work_date", "entry_time", "exit_time", "calculated_hours", "cost_center", "description", "user_id"
     ]
-    for statement in sqls:
-        try:
-            with engine.connect() as conn:
-                conn.execute(text(statement))
+    with engine.connect() as conn:
+        for col in all_columns:
+            # 1. Asegurar que la columna existe
+            try:
+                col_type = "DOUBLE PRECISION" if col in ["horas", "calculated_hours"] else ("INTEGER" if col == "user_id" else "VARCHAR")
+                conn.execute(text(f"ALTER TABLE records ADD COLUMN IF NOT EXISTS {col} {col_type};"))
                 conn.commit()
-        except Exception:
-            pass
+            except Exception:
+                pass
+            # 2. Remover restricciones NOT NULL antiguas que causan error 500
+            try:
+                conn.execute(text(f"ALTER TABLE records ALTER COLUMN {col} DROP NOT NULL;"))
+                conn.commit()
+            except Exception:
+                pass
 except Exception as e:
-    print(f"Error al sincronizar esquema DB: {e}")
+    print(f"Aviso de sincronización DB: {e}")
 
 @app.get("/")
 def read_root():
@@ -114,19 +102,24 @@ def get_records(user_id: int, db: Session = Depends(get_db)):
     try:
         return db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.id.desc()).all()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error GET /records: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener registros: {str(e)}")
 
-# CREAR REGISTRO
+# CREAR REGISTRO PARA UN USUARIO
 @app.post("/records")
 def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depends(get_db)):
     try:
-        w_name = record_data.get("worker_name") or record_data.get("trabajador") or ""
-        w_date = record_data.get("work_date") or record_data.get("fecha") or ""
-        e_time = record_data.get("entry_time") or record_data.get("hora_entrada") or ""
-        x_time = record_data.get("exit_time") or record_data.get("hora_salida") or ""
+        w_name = str(record_data.get("worker_name") or record_data.get("trabajador") or "")
+        w_date = str(record_data.get("work_date") or record_data.get("fecha") or "")
+        e_time = str(record_data.get("entry_time") or record_data.get("hora_entrada") or "")
+        x_time = str(record_data.get("exit_time") or record_data.get("hora_salida") or "")
         calc_hrs = float(record_data.get("calculated_hours") or record_data.get("horas") or 0.0)
-        c_center = record_data.get("cost_center") or record_data.get("centro_costo") or ""
-        desc = record_data.get("description") or record_data.get("descripcion") or ""
+        c_center = str(record_data.get("cost_center") or record_data.get("centro_costo") or "")
+        desc = str(record_data.get("description") or record_data.get("descripcion") or "")
+
+        # Validar existencia de usuario para evitar conflicto de Clave Foránea
+        user_exists = db.query(models.User).filter(models.User.id == user_id).first()
+        valid_user_id = user_id if user_exists else None
 
         db_record = models.Record(
             worker_name=w_name,
@@ -143,7 +136,7 @@ def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depen
             horas=calc_hrs,
             centro_costo=c_center,
             descripcion=desc,
-            user_id=user_id
+            user_id=valid_user_id
         )
 
         db.add(db_record)
@@ -152,7 +145,8 @@ def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depen
         return db_record
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error interno al guardar: {str(e)}")
+        print(f"Error POST /records: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error al guardar registro: {str(e)}")
 
 # ACTUALIZAR REGISTRO
 @app.put("/records/{record_id}")
