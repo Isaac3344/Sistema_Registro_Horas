@@ -140,14 +140,25 @@ export default function App() {
   };
 
   // Función auxiliar para obtener el número de semana de una fecha (YYYY-WXX)
+  // Función precisa de 7 días (Lunes a Domingo)
   const getWeekNumber = (dateString) => {
+    if (!dateString) return "";
     const d = new Date(dateString);
     d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
-    const yearStart = new Date(d.getFullYear(), 0, 1);
-    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-    return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    // Ajustar al lunes de esa semana
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+    
+    // Calcular domingo de esa semana
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const formatDate = (dateObj) => dateObj.toISOString().split('T')[0];
+    return `${formatDate(monday)} al ${formatDate(sunday)}`;
   };
+
+
 
   // Filtrado avanzado de registros en la tabla
   const filteredRecords = records.filter((rec) => {
