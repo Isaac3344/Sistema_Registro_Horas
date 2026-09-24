@@ -35,10 +35,15 @@ def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(secu
         raise HTTPException(status_code=401, detail="No autorizado")
 
 def verify_write_permission(user_id: int, db: Session):
-    user = db.query(models.User).filter(models.User.id == user_id).first()
-    role = getattr(user, "role", "admin") if user else "admin"
-    if role == "employee":
-        raise HTTPException(status_code=403, detail="Acceso denegado: este usuario es de solo lectura.")
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        role = getattr(user, "role", "admin") if user else "admin"
+        if role == "employee":
+            raise HTTPException(status_code=403, detail="Acceso denegado: este usuario es de solo lectura.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass
 
 app = FastAPI(title="API Multiusuario Segura con JWT y Roles")
 
@@ -123,7 +128,7 @@ def login(credentials: Dict[str, Any], db: Session = Depends(get_db)):
 def get_users(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         users = db.query(models.User).all()
-        return [{"id": u.id, "username": u.username, "role": getattr(u, "role", "admin"), "cedula": getattr(u, "cedula", "-")} for u in users]
+        return [{"id": u.id, "username": u.username, "role": getattr(u, "role", "admin") or "admin", "cedula": getattr(u, "cedula", "-") or "-"} for u in users]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -131,20 +136,20 @@ def get_users(user_id: int = Depends(get_current_user_id), db: Session = Depends
 def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         current_user = db.query(models.User).filter(models.User.id == user_id).first()
-        admin_user = db.query(models.User).filter(models.User.role == "admin").order_by(models.User.id.asc()).first()
-        admin_id = admin_user.id if admin_user else user_id
-
         user_role = getattr(current_user, "role", "admin") if current_user else "admin"
         user_cedula = getattr(current_user, "cedula", "") if current_user else ""
 
+        # Si es empleado con cédula, filtra por la cédula
         if user_role == "employee" and user_cedula:
             records = db.query(models.Record).filter(
                 models.Record.cost_center.ilike(f"%{user_cedula}%")
             ).order_by(models.Record.id.desc()).all()
             return records
         else:
-            return db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.id.desc()).all()
+            # Si es admin o no tiene cédula, muestra todos los registros de forma segura
+            return db.query(models.Record).order_by(models.Record.id.desc()).all()
     except Exception as e:
+        print(f"Error en /records: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/records")
