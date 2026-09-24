@@ -135,21 +135,52 @@ def get_users(user_id: int = Depends(get_current_user_id), db: Session = Depends
 @app.get("/records")
 def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
-        current_user = db.query(models.User).filter(models.User.id == user_id).first()
-        user_role = getattr(current_user, "role", "admin") if current_user else "admin"
-        user_cedula = getattr(current_user, "cedula", "") if current_user else ""
+        # Consultar el usuario actual de forma segura usando SQL nativo
+        user_result = db.execute(text("SELECT id, username, role, cedula FROM users WHERE id = :uid"), {"uid": user_id}).fetchone()
+        
+        user_role = "admin"
+        user_cedula = ""
+        if user_result:
+            # user_result tiene índices: 0:id, 1:username, 2:role, 3:cedula
+            user_role = user_result[2] if len(user_result) > 2 and user_result[2] else "admin"
+            user_cedula = user_result[3] if len(user_result) > 3 and user_result[3] else ""
 
-        # Si es empleado con cédula, filtra por la cédula
+        # Si es empleado, filtramos estrictamente por su cédula en centro de costo
         if user_role == "employee" and user_cedula:
-            records = db.query(models.Record).filter(
-                models.Record.cost_center.ilike(f"%{user_cedula}%")
-            ).order_by(models.Record.id.desc()).all()
-            return records
+            query = text("""
+                SELECT id, worker_name, work_date, entry_time, exit_time, calculated_hours, cost_center, description, user_id 
+                FROM records 
+                WHERE cost_center ILIKE :cedula 
+                ORDER BY id DESC
+            """)
+            rows = db.execute(query, {"cedula": f"%{user_cedula}%"}).fetchall()
         else:
-            # Si es admin o no tiene cédula, muestra todos los registros de forma segura
-            return db.query(models.Record).order_by(models.Record.id.desc()).all()
+            # Si es admin, traemos todos los registros
+            query = text("""
+                SELECT id, worker_name, work_date, entry_time, exit_time, calculated_hours, cost_center, description, user_id 
+                FROM records 
+                ORDER BY id DESC
+            """)
+            rows = db.execute(query).fetchall()
+
+        # Mapear los resultados a diccionarios limpios para el frontend
+        result_list = []
+        for r in rows:
+            result_list.append({
+                "id": r[0],
+                "worker_name": r[1] or "",
+                "work_date": r[2] or "",
+                "entry_time": r[3] or "",
+                "exit_time": r[4] or "",
+                "calculated_hours": float(r[5] or 0.0),
+                "cost_center": r[6] or "",
+                "description": r[7] or "",
+                "user_id": r[8] or 1
+            })
+        return result_list
+
     except Exception as e:
-        print(f"Error en /records: {e}")
+        print(f"Error crítico en /records: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/records")
