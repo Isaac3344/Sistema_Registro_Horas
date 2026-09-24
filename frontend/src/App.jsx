@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import * as XLSX from "xlsx"; // Librería profesional para Excel
+import XLSX from "xlsx-js-style"; // Librería profesional con soporte de estilos y colores
 import { 
   registerUser, 
   loginUser, 
@@ -144,46 +144,114 @@ export default function App() {
     return name.includes(term) || center.includes(term) || date.includes(term) || desc.includes(term);
   });
 
-  // Exportar a Excel con diseño profesional (.xlsx)
+  // Exportar a Excel con diseño profesional, colores corporativos y totales
   const handleExportExcel = () => {
     if (records.length === 0) {
       alert("No hay registros para exportar.");
       return;
     }
 
-    // Mapear los datos con nombres limpios y profesionales para la hoja de cálculo
-    const dataToExport = records.map((r, index) => ({
-      "N°": index + 1,
-      "Trabajador": r.worker_name || r.trabajador || "",
-      "Fecha": r.work_date || r.fecha || "",
-      "Hora Entrada": r.entry_time || r.hora_entrada || "",
-      "Hora Salida": r.exit_time || r.hora_salida || "",
-      "Total Horas": Number(r.calculated_hours || r.horas || 0),
-      "Centro de Costo": r.cost_center || r.centro_costo || "General",
-      "Descripción de Tareas": r.description || r.descripcion || ""
-    }));
+    // 1. Construir matriz de datos (Filas y Columnas)
+    const aoa = [
+      ["REPORTE GENERAL DE JORNADAS Y COSTOS"], // Título superior
+      [], // Espacio
+      ["N°", "Trabajador", "Fecha", "Entrada", "Salida", "Horas", "Centro de Costo", "Descripción de Tareas"] // Cabeceras
+    ];
 
-    // Crear la hoja de trabajo (Worksheet)
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    let totalHorasSuma = 0;
 
-    // Ajustar automáticamente el ancho de las columnas para que no se corten los textos
-    const colWidths = [
-      { wch: 5 },  // N°
-      { wch: 20 }, // Trabajador
-      { wch: 12 }, // Fecha
+    records.forEach((r, index) => {
+      const h = Number(r.calculated_hours || r.horas || 0);
+      totalHorasSuma += h;
+      aoa.push([
+        index + 1,
+        r.worker_name || r.trabajador || "",
+        r.work_date || r.fecha || "",
+        r.entry_time || r.hora_entrada || "",
+        r.exit_time || r.hora_salida || "",
+        h,
+        r.cost_center || r.centro_costo || "General",
+        r.description || r.descripcion || ""
+      ]);
+    });
+
+    // Fila de Total Final
+    aoa.push(["", "", "", "", "TOTAL HORAS:", totalHorasSuma, "", ""]);
+
+    const worksheet = XLSX.utils.aoa_to_sheet(aoa);
+
+    // 2. Definir Estilos Profesionales
+    const headerStyle = {
+      font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "4F46E5" } }, // Color Índigo Corporativo
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+
+    const titleStyle = {
+      font: { name: "Arial", sz: 14, bold: true, color: { rgb: "1E293B" } },
+      alignment: { horizontal: "center", vertical: "center" }
+    };
+
+    const cellStyle = {
+      font: { name: "Arial", sz: 10 },
+      border: {
+        top: { style: "thin", color: { rgb: "E2E8F0" } },
+        bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+        left: { style: "thin", color: { rgb: "E2E8F0" } },
+        right: { style: "thin", color: { rgb: "E2E8F0" } }
+      },
+      alignment: { vertical: "center" }
+    };
+
+    const totalStyle = {
+      font: { name: "Arial", sz: 11, bold: true, color: { rgb: "0F172A" } },
+      fill: { fgColor: { rgb: "E2E8F0" } }, // Gris claro corporativo
+      border: {
+        top: { style: "medium", color: { rgb: "000000" } },
+        bottom: { style: "medium", color: { rgb: "000000" } }
+      },
+      alignment: { horizontal: "right", vertical: "center" }
+    };
+
+    // Aplicar estilos celda por celda
+    const range = XLSX.utils.decode_range(worksheet["!ref"]);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+        if (!worksheet[cellAddress]) continue;
+
+        if (R === 0) {
+          worksheet[cellAddress].s = titleStyle;
+        } else if (R === 2) {
+          worksheet[cellAddress].s = headerStyle;
+        } else if (R === range.e.r) {
+          worksheet[cellAddress].s = totalStyle;
+        } else {
+          worksheet[cellAddress].s = cellStyle;
+        }
+      }
+    }
+
+    // Ancho de columnas adaptativo
+    worksheet["!cols"] = [
+      { wch: 6 },  // N°
+      { wch: 22 }, // Trabajador
+      { wch: 14 }, // Fecha
       { wch: 12 }, // Entrada
       { wch: 12 }, // Salida
-      { wch: 12 }, // Horas
-      { wch: 18 }, // Centro de Costo
-      { wch: 35 }, // Descripción
+      { wch: 14 }, // Horas
+      { wch: 20 }, // Centro de Costo
+      { wch: 40 }, // Descripción
     ];
-    worksheet["!cols"] = colWidths;
 
-    // Crear el libro de trabajo (Workbook) y añadir la hoja
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte de Jornadas");
-
-    // Descargar el archivo con formato Excel real
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Jornadas Laborales");
     XLSX.writeFile(workbook, "Reporte_Jornadas_Profesional.xlsx");
   };
 
@@ -594,7 +662,7 @@ export default function App() {
                   {Object.entries(horasPorCentro).map(([centro, horas]) => {
                     const porcentaje = totalHoras > 0 ? (horas / totalHoras) * 100 : 0;
                     return (
-                      <div key={centro}>
+                      <div key= {centro}>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-slate-200 font-medium">{centro || "Sin especificar"}</span>
                           <span className="text-indigo-400 font-bold">{horas.toFixed(1)} hrs ({porcentaje.toFixed(0)}%)</span>
