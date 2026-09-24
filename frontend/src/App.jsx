@@ -12,7 +12,6 @@ import {
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [userRole, setUserRole] = useState(localStorage.getItem("userRole") || "admin");
-  const [isLoginView, setIsLoginView] = useState(true);
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
@@ -40,6 +39,7 @@ export default function App() {
   const [empCedula, setEmpCedula] = useState("");
   const [empSuccessMsg, setEmpSuccessMsg] = useState("");
 
+  // Definimos estrictamente si es empleado de solo vista
   const isReadOnly = userRole === "employee";
 
   useEffect(() => {
@@ -66,6 +66,7 @@ export default function App() {
   };
 
   const loadUsers = async () => {
+    if (isReadOnly) return;
     try {
       const response = await fetch("https://backend-registro-horas.onrender.com/users", {
         headers: { "Authorization": `Bearer ${token}` }
@@ -103,10 +104,11 @@ export default function App() {
     setAuthError("");
     try {
       let data = await loginUser(usernameInput, passwordInput);
+      const assignedRole = data.role || "admin";
       setToken(data.token);
-      setUserRole(data.role || "admin");
+      setUserRole(assignedRole);
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userRole", data.role || "admin");
+      localStorage.setItem("userRole", assignedRole);
       setUsernameInput("");
       setPasswordInput("");
     } catch (err) {
@@ -368,19 +370,6 @@ export default function App() {
   });
 
   const totalHorasStats = recordsForStats.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
-  const horasPorTrabajador = recordsForStats.reduce((acc, curr) => {
-    const t = curr.worker_name || curr.trabajador || "Sin nombre";
-    const h = Number(curr.calculated_hours || curr.horas) || 0;
-    acc[t] = (acc[t] || 0) + h;
-    return acc;
-  }, {});
-
-  const horasPorCentro = recordsForStats.reduce((acc, curr) => {
-    const c = curr.cost_center || curr.centro_costo || "General";
-    const h = Number(curr.calculated_hours || curr.horas) || 0;
-    acc[c] = (acc[c] || 0) + h;
-    return acc;
-  }, {});
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -636,7 +625,7 @@ export default function App() {
               )}
             </div>
           </div>
-        ) : currentTab === "empleados" ? (
+        ) : currentTab === "empleados" && !isReadOnly ? (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
               <h2 className="text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
@@ -696,7 +685,6 @@ export default function App() {
               </form>
             </div>
 
-            {/* Listado de Usuarios con Botón de Eliminar */}
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
               <h2 className="text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
               {usersList.length === 0 ? (
