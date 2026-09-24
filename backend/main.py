@@ -119,7 +119,6 @@ def login(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.id})
     return {"id": user.id, "username": user.username, "role": user_role, "cedula": user_cedula, "token": access_token}
 
-# Endpoint para listar usuarios creados (para el panel del administrador)
 @app.get("/users")
 def get_users(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
@@ -176,7 +175,7 @@ def create_record(record_data: Dict[str, Any], user_id: int = Depends(get_curren
 def update_record(record_id: int, record_data: Dict[str, Any], user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     verify_write_permission(user_id, db)
     try:
-        db_record = db.query(models.Record).filter(models.Record.id == record_id, models.Record.user_id == user_id).first()
+        db_record = db.query(models.Record).filter(models.Record.id == record_id).first()
         if not db_record:
             raise HTTPException(status_code=404, detail="Registro no encontrado")
 
@@ -201,7 +200,7 @@ def update_record(record_id: int, record_data: Dict[str, Any], user_id: int = De
 def delete_record(record_id: int, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     verify_write_permission(user_id, db)
     try:
-        db_record = db.query(models.Record).filter(models.Record.id == record_id, models.Record.user_id == user_id).first()
+        db_record = db.query(models.Record).filter(models.Record.id == record_id).first()
         if not db_record:
             raise HTTPException(status_code=404, detail="Registro no encontrado")
         db.delete(db_record)

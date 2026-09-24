@@ -17,7 +17,7 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
 
-  const [currentTab, setCurrentTab] = useState("gestion"); // "gestion", "estadisticas", "empleados"
+  const [currentTab, setCurrentTab] = useState("gestion");
   const [records, setRecords] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -618,7 +618,6 @@ export default function App() {
             </div>
           </div>
         ) : currentTab === "empleados" ? (
-          /* ================= GESTIÓN Y LISTADO DE USUARIOS Y ROLES ================= */
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
               <h2 className="text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
@@ -678,9 +677,8 @@ export default function App() {
               </form>
             </div>
 
-            {/* Listado de Usuarios Registrados y sus Roles */}
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h2 className="text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados en el Sistema</h2>
+              <h2 className="text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
               {usersList.length === 0 ? (
                 <p className="text-slate-500 text-sm text-center py-4">No hay usuarios cargados.</p>
               ) : (
