@@ -141,20 +141,27 @@ export default function App() {
 
   // Función auxiliar para obtener el número de semana de una fecha (YYYY-WXX)
   // Función precisa de 7 días (Lunes a Domingo)
+  // Función infalible de 7 días exactos basada puramente en la fecha local
   const getWeekNumber = (dateString) => {
     if (!dateString) return "";
-    const d = new Date(dateString);
-    d.setHours(0, 0, 0, 0);
-    // Ajustar al lunes de esa semana
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    const monday = new Date(d.setDate(diff));
+    // Separar año, mes y día de forma exacta para evitar desfases de zona horaria
+    const [year, month, day] = dateString.split("-").map(Number);
+    const d = new Date(year, month - 1, day);
     
-    // Calcular domingo de esa semana
+    const dayOfWeek = d.getDay(); // 0 es Domingo, 1 es Lunes...
+    const diffToMonday = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    
+    const monday = new Date(year, month - 1, diffToMonday);
     const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
+    sunday.setDate(monday.getDate() + 6); // Exactamente 6 días después para completar los 7 días de lunes a domingo
 
-    const formatDate = (dateObj) => dateObj.toISOString().split('T')[0];
+    const formatDate = (dateObj) => {
+      const y = dateObj.getFullYear();
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const dayStr = String(dateObj.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dayStr}`;
+    };
+
     return `${formatDate(monday)} al ${formatDate(sunday)}`;
   };
 
