@@ -16,13 +16,25 @@ class Record(Base):
     __tablename__ = "records"
 
     id = Column(Integer, primary_key=True, index=True)
-    worker_name = Column(String, nullable=False)
-    work_date = Column(String, nullable=False)
-    entry_time = Column(String, nullable=False)
-    exit_time = Column(String, nullable=False)
-    calculated_hours = Column(Float, nullable=False)
+    
+    # Atributos nuevos
+    worker_name = Column(String, nullable=True)
+    work_date = Column(String, nullable=True)
+    entry_time = Column(String, nullable=True)
+    exit_time = Column(String, nullable=True)
+    calculated_hours = Column(Float, nullable=True)
     cost_center = Column(String, nullable=True)
     description = Column(String, nullable=True)
+
+    # Atributos antiguos (para bases de datos existentes)
+    trabajador = Column(String, nullable=True)
+    fecha = Column(String, nullable=True)
+    hora_entrada = Column(String, nullable=True)
+    hora_salida = Column(String, nullable=True)
+    horas = Column(Float, nullable=True)
+    centro_costo = Column(String, nullable=True)
+    descripcion = Column(String, nullable=True)
+
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     owner = relationship("User", back_populates="records")
