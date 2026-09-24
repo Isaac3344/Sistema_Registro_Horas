@@ -2,18 +2,22 @@ from typing import Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 import models
 from database import engine, get_db
 
-# Crear y sincronizar las tablas automáticamente en Neon PostgreSQL
+# Crear tablas y agregar columnas faltantes automáticamente en PostgreSQL Neon
 try:
     models.Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR;"))
+        conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS user_id INTEGER;"))
+        conn.commit()
 except Exception as e:
-    print(f"Error al sincronizar tablas en la base de datos: {e}")
+    print(f"Sincronizando estructura de base de datos: {e}")
 
 app = FastAPI(title="API Multiusuario Control de Horas")
 
-# Configuración estricta de CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,7 +30,7 @@ app.add_middleware(
 def read_root():
     return {"status": "online", "message": "API Multiusuario activa"}
 
-# ENDPOINT DE LOGIN Y REGISTRO AUTOMÁTICO
+# LOGIN Y REGISTRO AUTOMÁTICO EN POSTGRESQL
 @app.post("/login")
 def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -42,7 +46,6 @@ def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
         user = db.query(models.User).filter(models.User.username == username).first()
 
         if not user:
-            # Creación automática del usuario en su primer inicio
             user = models.User(username=username, password=password)
             db.add(user)
             db.commit()
@@ -62,7 +65,7 @@ def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
         print(f"Error en /login: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error en servidor al autenticar: {str(e)}"
+            detail=f"Error al autenticar: {str(e)}"
         )
 
 # OBTENER REGISTROS EXCLUSIVOS DEL USUARIO
