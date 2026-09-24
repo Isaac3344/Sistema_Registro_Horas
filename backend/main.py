@@ -36,10 +36,11 @@ def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(secu
 
 def verify_write_permission(user_id: int, db: Session):
     user = db.query(models.User).filter(models.User.id == user_id).first()
-    if user and user.username.lower().startswith("viewer_"):
+    # Si el rol es employee/viewer, se bloquea la escritura
+    if user and getattr(user, "role", "admin") == "employee":
         raise HTTPException(status_code=403, detail="Acceso denegado: este usuario es de solo lectura.")
 
-app = FastAPI(title="API Multiusuario Segura con JWT y Roles")
+app = FastAPI(title="API Multiusuario Segura con JWT y Roles por Cédula")
 
 app.add_middleware(
     CORSMiddleware,
@@ -58,46 +59,53 @@ async def global_exception_handler(request: Request, exc: Exception):
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
+# Saneamiento y actualización automática de columnas en BD Neon
 try:
     models.Base.metadata.create_all(bind=engine)
-    all_columns = [
-        "trabajador", "fecha", "hora_entrada", "hora_salida", "horas", "centro_costo", "descripcion",
-        "worker_name", "work_date", "entry_time", "exit_time", "calculated_hours", "cost_center", "description", "user_id"
-    ]
     with engine.connect() as conn:
-        for col in all_columns:
-            try:
-                col_type = "DOUBLE PRECISION" if col in ["horas", "calculated_hours"] else ("INTEGER" if col == "user_id" else "VARCHAR")
-                conn.execute(text(f"ALTER TABLE records ADD COLUMN IF NOT EXISTS {col} {col_type};"))
-                conn.execute(text(f"ALTER TABLE records ALTER COLUMN {col} DROP NOT NULL;"))
-                conn.commit()
-            except Exception:
-                pass
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS cedula VARCHAR;"))
+            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR DEFAULT 'admin';"))
+            conn.commit()
+        except Exception:
+            pass
 except Exception:
     pass
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "message": "API JWT Segura activa con soporte de roles"}
+    return {"status": "online", "message": "API JWT Segura activa con validación estricta de Cédula"}
 
 @app.post("/register")
 def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
     password = credentials.get("password", "").strip()
+    cedula = credentials.get("cedula", "").strip()
+    role = credentials.get("role", "admin").strip() # 'admin' o 'employee'
 
     if not username or not password:
         raise HTTPException(status_code=400, detail="Usuario y contraseña requeridos")
 
+    if role == "employee" and not cedula:
+        raise HTTPException(status_code=400, detail="La cédula es obligatoria para cuentas de empleado")
+
     if db.query(models.User).filter(models.User.username == username).first():
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
 
-    new_user = models.User(username=username, password=password, hashed_password=password)
+    # Crear usuario con rol y cédula
+    new_user = models.User(
+        username=username, 
+        password=password, 
+        hashed_password=password,
+        cedula=cedula if role == "employee" else None,
+        role=role
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     access_token = create_access_token(data={"sub": new_user.id})
-    return {"id": new_user.id, "username": new_user.username, "token": access_token}
+    return {"id": new_user.id, "username": new_user.username, "role": new_user.role, "cedula": new_user.cedula, "token": access_token}
 
 @app.post("/login")
 def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
@@ -112,23 +120,27 @@ def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
     access_token = create_access_token(data={"sub": user.id})
-    return {"id": user.id, "username": user.username, "token": access_token}
+    return {"id": user.id, "username": user.username, "role": getattr(user, "role", "admin"), "cedula": getattr(user, "cedula", ""), "token": access_token}
 
 @app.get("/records")
 def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         current_user = db.query(models.User).filter(models.User.id == user_id).first()
-        admin_user = db.query(models.User).filter(~models.User.username.ilike("viewer_%")).order_by(models.User.id.asc()).first()
+        admin_user = db.query(models.User).filter(models.User.role == "admin").order_by(models.User.id.asc()).first()
         admin_id = admin_user.id if admin_user else user_id
 
-        if current_user and current_user.username.lower().startswith("viewer_"):
-            identification = current_user.username.lower().replace("viewer_", "").strip()
+        user_role = getattr(current_user, "role", "admin")
+        user_cedula = getattr(current_user, "cedula", "")
+
+        # Si es empleado, filtramos estrictamente por su cédula registrada
+        if user_role == "employee" and user_cedula:
             records = db.query(models.Record).filter(
                 models.Record.user_id == admin_id,
-                models.Record.cost_center.ilike(f"%{identification}%")
+                models.Record.cost_center.ilike(f"%{user_cedula}%")
             ).order_by(models.Record.id.desc()).all()
             return records
         else:
+            # Si es admin, ve todos sus registros
             return db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.id.desc()).all()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

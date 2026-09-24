@@ -14,6 +14,8 @@ export default function App() {
   const [isLoginView, setIsLoginView] = useState(true);
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
+  const [roleInput, setRoleInput] = useState("admin"); // "admin" o "employee"
+  const [cedulaInput, setCedulaInput] = useState("");
   const [authError, setAuthError] = useState("");
 
   const [currentTab, setCurrentTab] = useState("gestion");
@@ -33,8 +35,8 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState(null);
 
-  const currentUsername = localStorage.getItem("username") || "";
-  const isReadOnly = currentUsername.toLowerCase().startsWith("viewer_");
+  const currentUserRole = localStorage.getItem("userRole") || "admin";
+  const isReadOnly = currentUserRole === "employee";
 
   useEffect(() => {
     if (token) {
@@ -64,12 +66,22 @@ export default function App() {
       if (isLoginView) {
         data = await loginUser(usernameInput, passwordInput);
       } else {
-        data = await registerUser(usernameInput, passwordInput);
+        if (roleInput === "employee" && !cedulaInput) {
+          setAuthError("La cédula es obligatoria para cuentas de empleado.");
+          return;
+        }
+        data = await registerUser({
+          username: usernameInput,
+          password: passwordInput,
+          role: roleInput,
+          cedula: cedulaInput
+        });
       }
       setToken(data.token);
-      localStorage.setItem("username", usernameInput);
+      localStorage.setItem("userRole", data.role || "admin");
       setUsernameInput("");
       setPasswordInput("");
+      setCedulaInput("");
     } catch (err) {
       setAuthError(err.message);
     }
@@ -77,7 +89,7 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("username");
+    localStorage.removeItem("userRole");
     setToken("");
     setRecords([]);
   };
@@ -95,10 +107,7 @@ export default function App() {
 
   const handleSubmitRecord = async (e) => {
     e.preventDefault();
-    if (isReadOnly) {
-      alert("Tu cuenta es de solo lectura.");
-      return;
-    }
+    if (isReadOnly) return;
     try {
       const recordData = {
         worker_name: workerName,
@@ -194,7 +203,7 @@ export default function App() {
     }
 
     const aoa = [
-      ["REPORTE FILTRADO DE JORNADAS Y COSTOS"],
+      ["REPORTE DE JORNADAS Y COSTOS"],
       [],
       ["N°", "Trabajador", "Fecha", "Entrada", "Salida", "Horas", "Centro de Costo", "Descripción de Tareas"]
     ];
@@ -237,12 +246,12 @@ export default function App() {
 
     worksheet["!cols"] = [{ wch: 6 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 40 }];
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte Filtrado");
-    XLSX.writeFile(workbook, "Reporte_Jornadas_Filtrado.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
+    XLSX.writeFile(workbook, "Reporte_Jornadas.xlsx");
   };
 
   const handleExportPDF = () => window.print();
-  const handleImport = () => alert("Función no disponible para cuentas de solo lectura.");
+  const handleImport = () => alert("Función no disponible para cuentas de empleados.");
 
   if (!token) {
     return (
@@ -251,12 +260,12 @@ export default function App() {
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
 
         <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
-          <div className="text-center mb-8">
-            <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-3 shadow-inner">
+          <div className="text-center mb-6">
+            <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-2 shadow-inner">
               ⚡
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              {isLoginView ? "Bienvenido de nuevo" : "Crea tu Cuenta"}
+              {isLoginView ? "Iniciar Sesión" : "Crear Cuenta"}
             </h1>
             <p className="text-slate-400 text-sm mt-1">Plataforma Profesional de Horas</p>
           </div>
@@ -276,7 +285,7 @@ export default function App() {
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
-                placeholder="Ingresa tu usuario (ej. viewer_12345)"
+                placeholder="Ingresa tu usuario"
               />
             </div>
 
@@ -291,6 +300,36 @@ export default function App() {
                 placeholder="••••••••"
               />
             </div>
+
+            {!isLoginView && (
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Tipo de Cuenta</label>
+                  <select
+                    value={roleInput}
+                    onChange={(e) => setRoleInput(e.target.value)}
+                    className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
+                  >
+                    <option value="admin">Administrador (Control Total)</option>
+                    <option value="employee">Empleado / Solo Ver</option>
+                  </select>
+                </div>
+
+                {roleInput === "employee" && (
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Cédula o Identificación *</label>
+                    <input
+                      type="text"
+                      required
+                      value={cedulaInput}
+                      onChange={(e) => setCedulaInput(e.target.value)}
+                      className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
+                      placeholder="Ingresa tu número de cédula"
+                    />
+                  </div>
+                )}
+              </>
+            )}
 
             <button
               type="submit"
@@ -347,7 +386,7 @@ export default function App() {
           <div>
             <h1 className="font-bold text-white text-lg">APP REGISTRO</h1>
             <p className="text-xs text-slate-400">
-              {isReadOnly ? "👁️ Modo Solo Lectura (Empleado/Cliente)" : "Control de Jornadas y Costos"}
+              {isReadOnly ? "👁️ Modo Empleado (Solo Visualización por Cédula)" : "Control de Jornadas y Costos"}
             </p>
           </div>
         </div>
@@ -442,13 +481,14 @@ export default function App() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Centro de Costo / Código ID</label>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Centro de Costo / Cédula *</label>
                     <input
                       type="text"
+                      required
                       value={costCenter}
                       onChange={(e) => setCostCenter(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                      placeholder="Ej. Operaciones o Cédula"
+                      placeholder="Ej. Cédula del empleado"
                     />
                   </div>
 
@@ -493,7 +533,7 @@ export default function App() {
                 <div>
                   <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
                   <p className="text-xs text-slate-400">
-                    {isReadOnly ? "Visualizando tus registros exclusivos" : "Filtra por nombre, semana o mes y exporta tus datos"}
+                    {isReadOnly ? "Visualizando únicamente tus jornadas asociadas" : "Filtra por nombre, semana o mes y exporta tus datos"}
                   </p>
                 </div>
 
