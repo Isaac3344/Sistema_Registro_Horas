@@ -36,8 +36,8 @@ def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(secu
 
 def verify_write_permission(user_id: int, db: Session):
     try:
-        user = db.query(models.User).filter(models.User.id == user_id).first()
-        role = getattr(user, "role", "admin") if user else "admin"
+        user_result = db.execute(text("SELECT role FROM users WHERE id = :uid"), {"uid": user_id}).fetchone()
+        role = user_result[0] if user_result and len(user_result) > 0 and user_result[0] else "admin"
         if role == "employee":
             raise HTTPException(status_code=403, detail="Acceso denegado: este usuario es de solo lectura.")
     except HTTPException:
@@ -87,27 +87,34 @@ def register(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     if not username or not password:
         raise HTTPException(status_code=400, detail="Usuario y contraseña requeridos")
 
-    if db.query(models.User).filter(models.User.username == username).first():
+    existing = db.execute(text("SELECT id FROM users WHERE username = :uname"), {"uname": username}).fetchone()
+    if existing:
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
 
+    # Creamos el usuario de forma compatible con el modelo existente
     new_user = models.User(
         username=username, 
         password=password, 
-        hashed_password=password,
-        role=role,
-        cedula=cedula if role == "employee" else None
+        hashed_password=password
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
+    # Actualizamos el rol y la cédula mediante SQL nativo para evitar conflictos con el ORM
     try:
         with engine.connect() as conn:
-            conn.execute(text("UPDATE users SET role = :role, cedula = :cedula WHERE id = :id"), 
-                         {"role": role, "cedula": cedula if role == "employee" else None, "id": new_user.id})
+            conn.execute(
+                text("UPDATE users SET role = :role, cedula = :cedula WHERE id = :id"), 
+                {
+                    "role": role, 
+                    "cedula": cedula if role == "employee" else None, 
+                    "id": new_user.id
+                }
+            )
             conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error actualizando rol/cedula: {e}")
 
     access_token = create_access_token(data={"sub": new_user.id})
     return {"id": new_user.id, "username": new_user.username, "role": role, "cedula": cedula, "token": access_token}
@@ -124,8 +131,10 @@ def login(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     if (user.password or user.hashed_password) != password:
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
-    user_role = getattr(user, "role", "admin") or "admin"
-    user_cedula = getattr(user, "cedula", "") or ""
+    # Consultar rol y cédula de forma segura por SQL nativo
+    user_res = db.execute(text("SELECT role, cedula FROM users WHERE id = :uid"), {"uid": user.id}).fetchone()
+    user_role = user_res[0] if user_res and len(user_res) > 0 and user_res[0] else "admin"
+    user_cedula = user_res[1] if user_res and len(user_res) > 1 and user_res[1] else ""
 
     access_token = create_access_token(data={"sub": user.id})
     return {"id": user.id, "username": user.username, "role": user_role, "cedula": user_cedula, "token": access_token}
@@ -133,12 +142,15 @@ def login(credentials: Dict[str, Any], db: Session = Depends(get_db)):
 @app.get("/users")
 def get_users(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
-        users = db.query(models.User).all()
+        rows = db.execute(text("SELECT id, username, role, cedula FROM users ORDER BY id DESC")).fetchall()
         result = []
-        for u in users:
-            r = getattr(u, "role", "admin") or "admin"
-            c = getattr(u, "cedula", "-") or "-"
-            result.append({"id": u.id, "username": u.username, "role": r, "cedula": c})
+        for r in rows:
+            result.append({
+                "id": r[0],
+                "username": r[1] or "",
+                "role": r[2] or "admin",
+                "cedula": r[3] or "-"
+            })
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
