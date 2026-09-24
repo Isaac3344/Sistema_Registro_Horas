@@ -22,7 +22,7 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -34,9 +34,15 @@ def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(secu
         raise HTTPException(status_code=401, detail="El token ha expirado. Inicia sesión nuevamente.")
     except Exception:
         raise HTTPException(status_code=401, detail="No autorizado")
+
+# Validación para bloquear permisos de escritura a usuarios de solo lectura (viewer_*)
+def verify_write_permission(user_id: int, db: Session):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if user and user.username.lower().startswith("viewer_"):
+        raise HTTPException(status_code=403, detail="Acceso denegado: este usuario es de solo lectura.")
 # --------------------------------------
 
-app = FastAPI(title="API Multiusuario Segura con JWT")
+app = FastAPI(title="API Multiusuario Segura con JWT y Roles")
 
 app.add_middleware(
     CORSMiddleware,
@@ -76,9 +82,9 @@ except Exception:
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "message": "API JWT Segura activa"}
+    return {"status": "online", "message": "API JWT Segura activa con soporte de roles"}
 
-# 1. REGISTRO DE USUARIOS (Retorna Token)
+# 1. REGISTRO DE USUARIOS
 @app.post("/register")
 def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -95,11 +101,10 @@ def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    # Generar Token
     access_token = create_access_token(data={"sub": new_user.id})
     return {"id": new_user.id, "username": new_user.username, "token": access_token}
 
-# 2. INICIO DE SESIÓN (Retorna Token)
+# 2. INICIO DE SESIÓN
 @app.post("/login")
 def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -112,11 +117,10 @@ def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     if (user.password or user.hashed_password) != password:
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
-    # Generar Token
     access_token = create_access_token(data={"sub": user.id})
     return {"id": user.id, "username": user.username, "token": access_token}
 
-# 3. OBTENER REGISTROS (Protegido con JWT)
+# 3. OBTENER REGISTROS (Permitido para todos los usuarios autenticados)
 @app.get("/records")
 def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
@@ -124,9 +128,10 @@ def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depen
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# 4. CREAR REGISTRO (Protegido con JWT)
+# 4. CREAR REGISTRO (Bloqueado si es usuario viewer_*)
 @app.post("/records")
 def create_record(record_data: Dict[str, Any], user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    verify_write_permission(user_id, db)
     try:
         db_record = models.Record(
             worker_name=str(record_data.get("worker_name") or ""),
@@ -136,19 +141,22 @@ def create_record(record_data: Dict[str, Any], user_id: int = Depends(get_curren
             calculated_hours=float(record_data.get("calculated_hours") or 0.0),
             cost_center=str(record_data.get("cost_center") or ""),
             description=str(record_data.get("description") or ""),
-            user_id=user_id # El ID viene encriptado en el token, no de la URL
+            user_id=user_id
         )
         db.add(db_record)
         db.commit()
         db.refresh(db_record)
         return db_record
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-# 5. ACTUALIZAR REGISTRO (Protegido con JWT)
+# 5. ACTUALIZAR REGISTRO (Bloqueado si es usuario viewer_*)
 @app.put("/records/{record_id}")
 def update_record(record_id: int, record_data: Dict[str, Any], user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    verify_write_permission(user_id, db)
     try:
         db_record = db.query(models.Record).filter(models.Record.id == record_id, models.Record.user_id == user_id).first()
         if not db_record:
@@ -171,9 +179,10 @@ def update_record(record_id: int, record_data: Dict[str, Any], user_id: int = De
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-# 6. ELIMINAR REGISTRO (Protegido con JWT)
+# 6. ELIMINAR REGISTRO (Bloqueado si es usuario viewer_*)
 @app.delete("/records/{record_id}")
 def delete_record(record_id: int, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    verify_write_permission(user_id, db)
     try:
         db_record = db.query(models.Record).filter(models.Record.id == record_id, models.Record.user_id == user_id).first()
         if not db_record:

@@ -20,11 +20,10 @@ export default function App() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // Nuevos estados para filtros avanzados
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all"); // "all", "week", "month"
-  const [selectedFilterValue, setSelectedFilterValue] = useState(""); // Valor del mes (YYYY-MM) o semana (YYYY-WXX)
-  const [selectedMonth, setSelectedMonth] = useState("all"); // Para la pestaña de estadísticas
+  const [filterType, setFilterType] = useState("all");
+  const [selectedFilterValue, setSelectedFilterValue] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   const [workerName, setWorkerName] = useState("");
   const [workDate, setWorkDate] = useState(new Date().toISOString().split("T")[0]);
@@ -33,6 +32,10 @@ export default function App() {
   const [costCenter, setCostCenter] = useState("");
   const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState(null);
+
+  // Detectar si el usuario actual es de solo lectura (ej. empieza con "viewer_")
+  const currentUsername = localStorage.getItem("username") || "";
+  const isReadOnly = currentUsername.toLowerCase().startsWith("viewer_");
 
   useEffect(() => {
     if (token) {
@@ -65,6 +68,7 @@ export default function App() {
         data = await registerUser(usernameInput, passwordInput);
       }
       setToken(data.token);
+      localStorage.setItem("username", usernameInput); // Guardar usuario actual
       setUsernameInput("");
       setPasswordInput("");
     } catch (err) {
@@ -74,6 +78,7 @@ export default function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("username");
     setToken("");
     setRecords([]);
   };
@@ -91,6 +96,10 @@ export default function App() {
 
   const handleSubmitRecord = async (e) => {
     e.preventDefault();
+    if (isReadOnly) {
+      alert("Tu cuenta es de solo lectura. No puedes crear registros.");
+      return;
+    }
     try {
       const recordData = {
         worker_name: workerName,
@@ -119,6 +128,7 @@ export default function App() {
   };
 
   const handleEdit = (rec) => {
+    if (isReadOnly) return;
     setEditingId(rec.id);
     setWorkerName(rec.worker_name || rec.trabajador || "");
     setWorkDate(rec.work_date || rec.fecha || "");
@@ -129,6 +139,10 @@ export default function App() {
   };
 
   const handleDelete = async (id) => {
+    if (isReadOnly) {
+      alert("Tu cuenta es de solo lectura.");
+      return;
+    }
     if (window.confirm("¿Estás seguro de eliminar este registro?")) {
       try {
         await deleteRecord(id);
@@ -139,21 +153,15 @@ export default function App() {
     }
   };
 
-  // Función auxiliar para obtener el número de semana de una fecha (YYYY-WXX)
-  // Función precisa de 7 días (Lunes a Domingo)
-  // Función infalible de 7 días exactos basada puramente en la fecha local
   const getWeekNumber = (dateString) => {
     if (!dateString) return "";
-    // Separar año, mes y día de forma exacta para evitar desfases de zona horaria
     const [year, month, day] = dateString.split("-").map(Number);
     const d = new Date(year, month - 1, day);
-    
-    const dayOfWeek = d.getDay(); // 0 es Domingo, 1 es Lunes...
+    const dayOfWeek = d.getDay();
     const diffToMonday = d.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    
     const monday = new Date(year, month - 1, diffToMonday);
     const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6); // Exactamente 6 días después para completar los 7 días de lunes a domingo
+    sunday.setDate(monday.getDate() + 6);
 
     const formatDate = (dateObj) => {
       const y = dateObj.getFullYear();
@@ -161,13 +169,9 @@ export default function App() {
       const dayStr = String(dateObj.getDate()).padStart(2, '0');
       return `${y}-${m}-${dayStr}`;
     };
-
     return `${formatDate(monday)} al ${formatDate(sunday)}`;
   };
 
-
-
-  // Filtrado avanzado de registros en la tabla
   const filteredRecords = records.filter((rec) => {
     const name = (rec.worker_name || rec.trabajador || "").toLowerCase();
     const center = (rec.cost_center || rec.centro_costo || "").toLowerCase();
@@ -175,22 +179,18 @@ export default function App() {
     const desc = (rec.description || rec.descripcion || "").toLowerCase();
     const term = searchTerm.toLowerCase();
 
-    // Filtro de texto general
     const matchesSearch = name.includes(term) || center.includes(term) || date.includes(term) || desc.includes(term);
     if (!matchesSearch) return false;
 
-    // Filtro por tipo (Mes o Semana)
     if (filterType === "month" && selectedFilterValue) {
-      return date.startsWith(selectedFilterValue); // YYYY-MM
+      return date.startsWith(selectedFilterValue);
     }
     if (filterType === "week" && selectedFilterValue) {
-      return getWeekNumber(date) === selectedFilterValue; // YYYY-WXX
+      return getWeekNumber(date) === selectedFilterValue;
     }
-
     return true;
   });
 
-  // Exportar a Excel (solo los registros actualmente filtrados)
   const handleExportExcel = () => {
     if (filteredRecords.length === 0) {
       alert("No hay registros filtrados para exportar.");
@@ -204,7 +204,6 @@ export default function App() {
     ];
 
     let totalHorasSuma = 0;
-
     filteredRecords.forEach((r, index) => {
       const h = Number(r.calculated_hours || r.horas || 0);
       totalHorasSuma += h;
@@ -221,18 +220,12 @@ export default function App() {
     });
 
     aoa.push(["", "", "", "", "TOTAL HORAS:", totalHorasSuma, "", ""]);
-
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
 
-    const headerStyle = {
-      font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "4F46E5" } },
-      alignment: { horizontal: "center", vertical: "center" },
-      border: { top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } }, left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } } }
-    };
+    const headerStyle = { font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F46E5" } }, alignment: { horizontal: "center", vertical: "center" } };
     const titleStyle = { font: { name: "Arial", sz: 14, bold: true, color: { rgb: "1E293B" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const cellStyle = { font: { name: "Arial", sz: 10 }, border: { top: { style: "thin", color: { rgb: "E2E8F0" } }, bottom: { style: "thin", color: { rgb: "E2E8F0" } }, left: { style: "thin", color: { rgb: "E2E8F0" } }, right: { style: "thin", color: { rgb: "E2E8F0" } } }, alignment: { vertical: "center" } };
-    const totalStyle = { font: { name: "Arial", sz: 11, bold: true, color: { rgb: "0F172A" } }, fill: { fgColor: { rgb: "E2E8F0" } }, border: { top: { style: "medium", color: { rgb: "000000" } }, bottom: { style: "medium", color: { rgb: "000000" } } }, alignment: { horizontal: "right", vertical: "center" } };
+    const cellStyle = { font: { name: "Arial", sz: 10 }, alignment: { vertical: "center" } };
+    const totalStyle = { font: { name: "Arial", sz: 11, bold: true }, fill: { fgColor: { rgb: "E2E8F0" } }, alignment: { horizontal: "right", vertical: "center" } };
 
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -246,22 +239,14 @@ export default function App() {
       }
     }
 
-    worksheet["!cols"] = [
-      { wch: 6 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 40 }
-    ];
-
+    worksheet["!cols"] = [{ wch: 6 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 40 }];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte Filtrado");
     XLSX.writeFile(workbook, "Reporte_Jornadas_Filtrado.xlsx");
   };
 
-  const handleExportPDF = () => {
-    window.print();
-  };
-
-  const handleImport = () => {
-    alert("Para importar masivamente, puedes utilizar tu plantilla de Excel conectada a la base de datos.");
-  };
+  const handleExportPDF = () => window.print();
+  const handleImport = () => alert("Función no disponible para cuentas de solo lectura.");
 
   if (!token) {
     return (
@@ -272,10 +257,10 @@ export default function App() {
         <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
           <div className="text-center mb-8">
             <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-3 shadow-inner">
-              ⚡
+              🔒
             </div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight">
-              {isLoginView ? "Bienvenido de nuevo" : "Crea tu Cuenta"}
+              {isLoginView ? "Iniciar Sesión" : "Crear Cuenta"}
             </h1>
             <p className="text-slate-400 text-sm mt-1">Plataforma Profesional de Horas</p>
           </div>
@@ -295,7 +280,7 @@ export default function App() {
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
                 className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
-                placeholder="Ingresa tu usuario"
+                placeholder="Ingresa tu usuario (ej. viewer_cliente)"
               />
             </div>
 
@@ -332,7 +317,6 @@ export default function App() {
     );
   }
 
-  // Listados únicos para selectores de meses y semanas
   const availableMonths = Array.from(new Set(records.map(r => (r.work_date || r.fecha || "").substring(0, 7)))).filter(Boolean).sort().reverse();
   const availableWeeks = Array.from(new Set(records.map(r => getWeekNumber(r.work_date || r.fecha || "")))).filter(Boolean).sort().reverse();
 
@@ -366,7 +350,9 @@ export default function App() {
           </div>
           <div>
             <h1 className="font-bold text-white text-lg">APP REGISTRO</h1>
-            <p className="text-xs text-slate-400">Control de Jornadas y Costos</p>
+            <p className="text-xs text-slate-400">
+              {isReadOnly ? "👁️ Modo Solo Lectura (Supervisor/Cliente)" : "Control de Jornadas y Costos"}
+            </p>
           </div>
         </div>
 
@@ -399,121 +385,129 @@ export default function App() {
 
       <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
         {currentTab === "gestion" ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit print:hidden">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="font-bold text-white text-base">
-                  {editingId ? "✏️ Editar Registro" : "➕ Nuevo Registro"}
-                </h2>
-                <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg text-xs font-bold">
-                  {calculatedHours.toFixed(2)} hrs
-                </span>
-              </div>
-
-              <form onSubmit={handleSubmitRecord} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Trabajador *</label>
-                  <input
-                    type="text"
-                    required
-                    value={workerName}
-                    onChange={(e) => setWorkerName(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                    placeholder="Ej. Juan Pérez"
-                  />
+          <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-6`}>
+            
+            {/* Si es solo lectura, se oculta el formulario izquierdo */}
+            {!isReadOnly && (
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit print:hidden">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="font-bold text-white text-base">
+                    {editingId ? "✏️ Editar Registro" : "➕ Nuevo Registro"}
+                  </h2>
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg text-xs font-bold">
+                    {calculatedHours.toFixed(2)} hrs
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Fecha</label>
-                  <input
-                    type="date"
-                    required
-                    value={workDate}
-                    onChange={(e) => setWorkDate(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+                <form onSubmit={handleSubmitRecord} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Entrada</label>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Trabajador *</label>
                     <input
-                      type="time"
+                      type="text"
                       required
-                      value={entryTime}
-                      onChange={(e) => setEntryTime(e.target.value)}
+                      value={workerName}
+                      onChange={(e) => setWorkerName(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      placeholder="Ej. Juan Pérez"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Fecha</label>
+                    <input
+                      type="date"
+                      required
+                      value={workDate}
+                      onChange={(e) => setWorkDate(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
                     />
                   </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Entrada</label>
+                      <input
+                        type="time"
+                        required
+                        value={entryTime}
+                        onChange={(e) => setEntryTime(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Salida</label>
+                      <input
+                        type="time"
+                        required
+                        value={exitTime}
+                        onChange={(e) => setExitTime(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Salida</label>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Centro de Costo</label>
                     <input
-                      type="time"
-                      required
-                      value={exitTime}
-                      onChange={(e) => setExitTime(e.target.value)}
+                      type="text"
+                      value={costCenter}
+                      onChange={(e) => setCostCenter(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      placeholder="Ej. Operaciones"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Centro de Costo</label>
-                  <input
-                    type="text"
-                    value={costCenter}
-                    onChange={(e) => setCostCenter(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                    placeholder="Ej. Operaciones"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Descripción</label>
+                    <textarea
+                      rows="2"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      placeholder="Detalle de tareas..."
+                    ></textarea>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Descripción</label>
-                  <textarea
-                    rows="2"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                    placeholder="Detalle de tareas..."
-                  ></textarea>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition duration-200"
-                >
-                  {editingId ? "Actualizar Registro" : "Guardar Registro"}
-                </button>
-
-                {editingId && (
                   <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(null);
-                      setWorkerName("");
-                      setCostCenter("");
-                      setDescription("");
-                    }}
-                    className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-xl text-sm transition"
+                    type="submit"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition duration-200"
                   >
-                    Cancelar Edición
+                    {editingId ? "Actualizar Registro" : "Guardar Registro"}
                   </button>
-                )}
-              </form>
-            </div>
 
-            <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col">
+                  {editingId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(null);
+                        setWorkerName("");
+                        setCostCenter("");
+                        setDescription("");
+                      }}
+                      className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-xl text-sm transition"
+                    >
+                      Cancelar Edición
+                    </button>
+                  )}
+                </form>
+              </div>
+            )}
+
+            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col`}>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 print:hidden">
                 <div>
                   <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
-                  <p className="text-xs text-slate-400">Filtra por nombre, semana o mes y exporta tus datos</p>
+                  <p className="text-xs text-slate-400">
+                    {isReadOnly ? "Visualizando registros en modo lectura" : "Filtra por nombre, semana o mes y exporta tus datos"}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button onClick={handleImport} className="bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
-                    📥 Importar
-                  </button>
+                  {!isReadOnly && (
+                    <button onClick={handleImport} className="bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                      📥 Importar
+                    </button>
+                  )}
                   <button onClick={handleExportExcel} className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
                     📊 Excel ({filteredRecords.length})
                   </button>
@@ -523,7 +517,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Panel de Filtros Avanzados */}
+              {/* Panel de Filtros */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 print:hidden">
                 <input
                   type="text"
@@ -588,7 +582,7 @@ export default function App() {
                         <th className="pb-3 px-3">Horas</th>
                         <th className="pb-3 px-3">Centro Costo</th>
                         <th className="pb-3 px-3">Descripción</th>
-                        <th className="pb-3 px-3 text-right print:hidden">Acciones</th>
+                        {!isReadOnly && <th className="pb-3 px-3 text-right print:hidden">Acciones</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 text-sm">
@@ -610,14 +604,16 @@ export default function App() {
                           <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">
                             {rec.description || rec.descripcion || "-"}
                           </td>
-                          <td className="py-3 px-3 text-right space-x-2 print:hidden">
-                            <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">
-                              Editar
-                            </button>
-                            <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">
-                              Borrar
-                            </button>
-                          </td>
+                          {!isReadOnly && (
+                            <td className="py-3 px-3 text-right space-x-2 print:hidden">
+                              <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">
+                                Editar
+                              </button>
+                              <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">
+                                Borrar
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
