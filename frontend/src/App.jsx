@@ -68,7 +68,7 @@ export default function App() {
       {/* Cabecera idéntica a la imagen */}
       <header className="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-8 py-3">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
-          
+
           {/* Logo + Pestañas de Navegación */}
           <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-3">
@@ -86,11 +86,10 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveTab('gestion')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${
-                  activeTab === 'gestion'
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${activeTab === 'gestion'
                     ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/20'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <LayoutGrid size={15} />
                 <span>Gestión</span>
@@ -99,11 +98,10 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setActiveTab('estadisticas')}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${
-                  activeTab === 'estadisticas'
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-all ${activeTab === 'estadisticas'
                     ? 'bg-teal-500 text-slate-950 shadow-md shadow-teal-500/20'
                     : 'text-slate-400 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <BarChart3 size={15} />
                 <span>Estadísticas</span>
@@ -146,6 +144,7 @@ export default function App() {
                 records={records}
                 onDelete={handleDelete}
                 onEdit={(record) => setEditingRecord(record)}
+                onRefresh={loadRecords}
               />
             </div>
           </div>
