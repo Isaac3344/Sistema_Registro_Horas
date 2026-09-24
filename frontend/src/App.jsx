@@ -39,7 +39,6 @@ export default function App() {
   const [empCedula, setEmpCedula] = useState("");
   const [empSuccessMsg, setEmpSuccessMsg] = useState("");
 
-  // Definimos estrictamente si es empleado de solo vista
   const isReadOnly = userRole === "employee";
 
   useEffect(() => {

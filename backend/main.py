@@ -90,7 +90,13 @@ def register(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     if db.query(models.User).filter(models.User.username == username).first():
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
 
-    new_user = models.User(username=username, password=password, hashed_password=password)
+    new_user = models.User(
+        username=username, 
+        password=password, 
+        hashed_password=password,
+        role=role,
+        cedula=cedula if role == "employee" else None
+    )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -128,24 +134,39 @@ def login(credentials: Dict[str, Any], db: Session = Depends(get_db)):
 def get_users(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         users = db.query(models.User).all()
-        return [{"id": u.id, "username": u.username, "role": getattr(u, "role", "admin") or "admin", "cedula": getattr(u, "cedula", "-") or "-"} for u in users]
+        result = []
+        for u in users:
+            r = getattr(u, "role", "admin") or "admin"
+            c = getattr(u, "cedula", "-") or "-"
+            result.append({"id": u.id, "username": u.username, "role": r, "cedula": c})
+        return result
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, user_id_auth: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    try:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        db.delete(user)
+        db.commit()
+        return {"message": "Usuario eliminado correctamente"}
+    except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/records")
 def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
-        # Consultar el usuario actual de forma segura usando SQL nativo
         user_result = db.execute(text("SELECT id, username, role, cedula FROM users WHERE id = :uid"), {"uid": user_id}).fetchone()
         
         user_role = "admin"
         user_cedula = ""
         if user_result:
-            # user_result tiene índices: 0:id, 1:username, 2:role, 3:cedula
             user_role = user_result[2] if len(user_result) > 2 and user_result[2] else "admin"
             user_cedula = user_result[3] if len(user_result) > 3 and user_result[3] else ""
 
-        # Si es empleado, filtramos estrictamente por su cédula en centro de costo
         if user_role == "employee" and user_cedula:
             query = text("""
                 SELECT id, worker_name, work_date, entry_time, exit_time, calculated_hours, cost_center, description, user_id 
@@ -155,7 +176,6 @@ def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depen
             """)
             rows = db.execute(query, {"cedula": f"%{user_cedula}%"}).fetchall()
         else:
-            # Si es admin, traemos todos los registros
             query = text("""
                 SELECT id, worker_name, work_date, entry_time, exit_time, calculated_hours, cost_center, description, user_id 
                 FROM records 
@@ -163,7 +183,6 @@ def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depen
             """)
             rows = db.execute(query).fetchall()
 
-        # Mapear los resultados a diccionarios limpios para el frontend
         result_list = []
         for r in rows:
             result_list.append({
@@ -244,19 +263,6 @@ def delete_record(record_id: int, user_id: int = Depends(get_current_user_id), d
         return {"message": "Eliminado"}
     except HTTPException:
         raise
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@app.delete("/users/{user_id}")
-def delete_user(user_id: int, user_id_auth: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
-    try:
-        user = db.query(models.User).filter(models.User.id == user_id).first()
-        if not user:
-            raise HTTPException(status_code=404, detail="Usuario no encontrado")
-        db.delete(user)
-        db.commit()
-        return {"message": "Usuario eliminado correctamente"}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
