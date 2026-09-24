@@ -1,31 +1,12 @@
 import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
-import { 
-  Chart as ChartJS, 
-  CategoryScale, 
-  LinearScale, 
-  BarElement, 
-  Title, 
-  Tooltip, 
-  Legend 
-} from "chart.js";
-import { Bar } from "react-chartjs-2";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { 
   fetchRecords, 
   createRecord, 
   updateRecord, 
   deleteRecord 
 } from "./api";
-
-// Registramos los componentes necesarios de Chart.js
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
@@ -309,6 +290,28 @@ export default function App() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentRecords = filteredRecords.slice(indexOfFirstItem, indexOfLastItem);
 
+  const availableMonths = Array.from(new Set(records.map(r => (r.work_date || r.fecha || "").substring(0, 7)))).filter(Boolean).sort().reverse();
+  const recordsForStats = records.filter(r => {
+    if (selectedMonth === "all") return true;
+    const d = r.work_date || r.fecha;
+    return d && d.startsWith(selectedMonth);
+  });
+
+  const totalHorasStats = recordsForStats.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
+
+  const chartDataMap = {};
+  recordsForStats.forEach(r => {
+    const name = r.worker_name || r.trabajador || "Desconocido";
+    const hrs = Number(r.calculated_hours || r.horas || 0);
+    if (!chartDataMap[name]) chartDataMap[name] = 0;
+    chartDataMap[name] += hrs;
+  });
+
+  const chartData = Object.keys(chartDataMap).map(name => ({
+    name,
+    horas: Number(chartDataMap[name].toFixed(1))
+  }));
+
   const handleExportExcel = () => {
     if (filteredRecords.length === 0) {
       alert("No hay registros para exportar.");
@@ -340,10 +343,10 @@ export default function App() {
     aoa.push(["", "", "", "", "TOTAL HORAS:", totalHorasSuma, "", ""]);
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
 
-    const headerStyle = { font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F46E5" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const titleStyle = { font: { name: "Arial", sz: 14, bold: true, color: { rgb: "1E293B" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const cellStyle = { font: { name: "Arial", sz: 10 }, alignment: { vertical: "center" } };
-    const totalStyle = { font: { name: "Arial", sz: 11, bold: true }, fill: { fgColor: { rgb: "E2E8F0" } }, alignment: { horizontal: "right", vertical: "center" } };
+    const headerStyle = { font: { name: "Inter", sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F46E5" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const titleStyle = { font: { name: "Inter", sz: 14, bold: true, color: { rgb: "0F172A" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const cellStyle = { font: { name: "Inter", sz: 10 }, alignment: { vertical: "center" } };
+    const totalStyle = { font: { name: "Inter", sz: 11, bold: true }, fill: { fgColor: { rgb: "E2E8F0" } }, alignment: { horizontal: "right", vertical: "center" } };
 
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -367,25 +370,26 @@ export default function App() {
 
   if (!token) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-72 h-72 sm:w-96 sm:h-96 bg-indigo-600/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -right-40 w-72 h-72 sm:w-96 sm:h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Luces decorativas de fondo de alta gama */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-600/10 rounded-full blur-[120px] pointer-events-none animate-pulse" style={{ animationDuration: '6s' }}></div>
 
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
-          <div className="text-center mb-6">
-            <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-2 shadow-inner">
+        <div className="bg-slate-900/80 backdrop-blur-2xl border border-slate-800/80 p-8 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.6)] w-full max-w-md relative z-10">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-tr from-indigo-600 to-indigo-400 rounded-2xl text-white text-2xl shadow-lg shadow-indigo-500/30 mb-4 ring-4 ring-indigo-500/10">
               ⚡
             </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Iniciar Sesión</h1>
-            <p className="text-slate-400 text-xs sm:text-sm mt-1">Plataforma Profesional de Horas</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Iniciar Sesión</h1>
+            <p className="text-slate-400 text-sm mt-1.5 font-medium">Plataforma Corporativa de Control de Horas</p>
           </div>
 
-          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
+          <div className="flex bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 mb-6 shadow-inner">
             <button
               type="button"
               onClick={() => setLoginRoleType("admin")}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
-                loginRoleType === "admin" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                loginRoleType === "admin" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/40" : "text-slate-400 hover:text-white"
               }`}
             >
               👑 Administrador
@@ -393,8 +397,8 @@ export default function App() {
             <button
               type="button"
               onClick={() => setLoginRoleType("employee")}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
-                loginRoleType === "employee" ? "bg-emerald-600 text-white shadow" : "text-slate-400 hover:text-white"
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                loginRoleType === "employee" ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/40" : "text-slate-400 hover:text-white"
               }`}
             >
               👁️ Empleado
@@ -402,45 +406,45 @@ export default function App() {
           </div>
 
           {authError && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs sm:text-sm text-center">
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs font-medium text-center shadow-sm">
               {authError}
             </div>
           )}
 
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario</label>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Usuario</label>
               <input
                 type="text"
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                 placeholder="Ingresa tu usuario"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Contraseña</label>
               <input
                 type="password"
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                 placeholder="••••••••"
               />
             </div>
 
             {loginRoleType === "admin" && (
               <div>
-                <label className="block text-xs font-semibold text-indigo-400 uppercase mb-1">🔑 Token Secreto de Admin</label>
+                <label className="block text-[11px] font-bold text-indigo-400 uppercase tracking-wider mb-1.5">🔑 Token Secreto de Admin</label>
                 <input
                   type="password"
                   required
                   value={adminTokenInput}
                   onChange={(e) => setAdminTokenInput(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-indigo-500/50 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400 transition"
+                  className="w-full bg-slate-950/60 border border-indigo-500/40 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 transition-all placeholder:text-slate-600"
                   placeholder="Código token de seguridad"
                 />
               </div>
@@ -448,9 +452,9 @@ export default function App() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200 text-sm sm:text-base"
+              className="w-full mt-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold py-3.5 rounded-2xl shadow-xl shadow-indigo-600/30 transition-all duration-300 text-sm active:scale-[0.99]"
             >
-              Entrar al Sistema
+              Acceder al Sistema
             </button>
           </form>
         </div>
@@ -458,91 +462,47 @@ export default function App() {
     );
   }
 
-  const availableMonths = Array.from(new Set(records.map(r => (r.work_date || r.fecha || "").substring(0, 7)))).filter(Boolean).sort().reverse();
-  const recordsForStats = records.filter(r => {
-    if (selectedMonth === "all") return true;
-    const d = r.work_date || r.fecha;
-    return d && d.startsWith(selectedMonth);
-  });
-
-  const totalHorasStats = recordsForStats.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
-
-  // Configuración de datos para el Gráfico de Estadísticas
-  // Agrupamos las horas por trabajador en el mes seleccionado
-  const workersForChart = Array.from(new Set(recordsForStats.map(r => r.worker_name || r.trabajador))).filter(Boolean);
-  const hoursPerWorker = workersForChart.map(w => {
-    return recordsForStats
-      .filter(r => (r.worker_name || r.trabajador) === w)
-      .reduce((sum, curr) => sum + (Number(curr.calculated_hours || curr.horas) || 0), 0);
-  });
-
-  const chartData = {
-    labels: workersForChart,
-    datasets: [
-      {
-        label: 'Horas Trabajadas',
-        data: hoursPerWorker,
-        backgroundColor: 'rgba(99, 102, 241, 0.7)', // Color Indigo moderno
-        borderColor: 'rgba(99, 102, 241, 1)',
-        borderWidth: 2,
-        borderRadius: 8,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-        labels: { color: '#cbd5e1', font: { family: 'sans-serif' } }
-      },
-      title: {
-        display: false,
-      },
-    },
-    scales: {
-      x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
-      y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 print:hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
+      {/* Header corporativo refinado */}
+      <header className="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800/80 px-4 sm:px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-40 shadow-xl print:hidden">
         <div className="flex items-center justify-between w-full md:w-auto">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold text-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 bg-gradient-to-tr from-emerald-600 to-emerald-400 rounded-2xl flex items-center justify-center text-white font-extrabold text-sm shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-500/20">
               AR
             </div>
             <div>
-              <h1 className="font-bold text-white text-base sm:text-lg">APP REGISTRO</h1>
-              <p className="text-[11px] text-slate-400">
-                {isReadOnly ? "👁️ Empleado (Vista)" : "Panel Administrador"}
-              </p>
+              <h1 className="font-extrabold text-white text-base tracking-wide">APP REGISTRO</h1>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                  {isReadOnly ? "Modo Empleado" : "Panel Administrador"}
+                </p>
+              </div>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="md:hidden bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+            className="md:hidden bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-3.5 py-2 rounded-xl text-xs font-bold transition-all"
           >
             Salir
           </button>
         </div>
 
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 w-full md:w-auto overflow-x-auto justify-center">
+        {/* Pestañas de navegación de alta gama */}
+        <div className="flex items-center bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 w-full md:w-auto overflow-x-auto justify-center shadow-inner">
           <button
             onClick={() => setCurrentTab("gestion")}
-            className={`flex-1 md:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
-              currentTab === "gestion" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+            className={`flex-1 md:flex-none px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${
+              currentTab === "gestion" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"
             }`}
           >
             📋 Gestión
           </button>
           <button
             onClick={() => setCurrentTab("estadisticas")}
-            className={`flex-1 md:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
-              currentTab === "estadisticas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+            className={`flex-1 md:flex-none px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${
+              currentTab === "estadisticas" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"
             }`}
           >
             📊 Estadísticas
@@ -550,8 +510,8 @@ export default function App() {
           {!isReadOnly && (
             <button
               onClick={() => setCurrentTab("empleados")}
-              className={`flex-1 md:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
-                currentTab === "empleados" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+              className={`flex-1 md:flex-none px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 whitespace-nowrap ${
+                currentTab === "empleados" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"
               }`}
             >
               👤 Accesos
@@ -561,100 +521,100 @@ export default function App() {
 
         <button
           onClick={handleLogout}
-          className="hidden md:block bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold transition"
+          className="hidden md:block bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-5 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm"
         >
           Cerrar Sesión
         </button>
       </header>
 
-      <main className="flex-1 p-3 sm:p-6 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
         {currentTab === "gestion" ? (
           <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-6`}>
             
             {!isReadOnly && (
-              <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl h-fit print:hidden">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-bold text-white text-sm sm:text-base">
+              <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 p-6 rounded-3xl shadow-2xl h-fit print:hidden">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-bold text-white text-sm sm:text-base tracking-tight">
                     {editingId ? "✏️ Editar Registro" : "➕ Nuevo Registro"}
                   </h2>
-                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg text-xs font-bold">
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 rounded-xl text-xs font-extrabold shadow-sm">
                     {calculatedHours.toFixed(2)} hrs
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmitRecord} className="space-y-3 sm:space-y-4">
+                <form onSubmit={handleSubmitRecord} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Trabajador *</label>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Trabajador *</label>
                     <input
                       type="text"
                       required
                       value={workerName}
                       onChange={(e) => setWorkerName(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                       placeholder="Ej. Juan Pérez"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Fecha</label>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fecha</label>
                     <input
                       type="date"
                       required
                       value={workDate}
                       onChange={(e) => setWorkDate(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Entrada</label>
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Entrada</label>
                       <input
                         type="time"
                         required
                         value={entryTime}
                         onChange={(e) => setEntryTime(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Salida</label>
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Salida</label>
                       <input
                         type="time"
                         required
                         value={exitTime}
                         onChange={(e) => setExitTime(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Centro de Costo / Cédula *</label>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Centro de Costo / Cédula *</label>
                     <input
                       type="text"
                       required
                       value={costCenter}
                       onChange={(e) => setCostCenter(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                       placeholder="Cédula del empleado"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Descripción</label>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Descripción</label>
                     <textarea
                       rows="2"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                       placeholder="Detalle de tareas..."
                     ></textarea>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition duration-200 text-sm"
+                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-3 rounded-2xl shadow-lg shadow-emerald-600/30 transition-all duration-300 text-sm active:scale-[0.99]"
                   >
                     {editingId ? "Actualizar Registro" : "Guardar Registro"}
                   </button>
@@ -662,25 +622,25 @@ export default function App() {
               </div>
             )}
 
-            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col justify-between`}>
+            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl flex flex-col justify-between`}>
               <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 print:hidden">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
                   <div>
-                    <h2 className="font-bold text-white text-base sm:text-lg">Historial de Registros</h2>
-                    <p className="text-xs text-slate-400">Consulta y exporta tus jornadas</p>
+                    <h2 className="font-bold text-white text-lg tracking-tight">Historial de Registros</h2>
+                    <p className="text-xs text-slate-400 mt-0.5">Consulta y exporta tus jornadas detalladas</p>
                   </div>
 
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <button onClick={handleExportExcel} className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                  <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                    <button onClick={handleExportExcel} className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm">
                       📊 Excel ({filteredRecords.length})
                     </button>
-                    <button onClick={handleExportPDF} className="flex-1 sm:flex-none bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                    <button onClick={handleExportPDF} className="flex-1 sm:flex-none bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm">
                       📄 PDF
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 print:hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 print:hidden">
                   <select
                     value={selectedWorkerFilter}
                     onChange={(e) => {
@@ -688,7 +648,7 @@ export default function App() {
                       setSelectedFilterValue("");
                       setCurrentPage(1);
                     }}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
+                    className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                   >
                     <option value="all">👤 Todos los trabajadores</option>
                     {uniqueWorkers.map(w => (
@@ -703,7 +663,7 @@ export default function App() {
                       setSelectedFilterValue("");
                       setCurrentPage(1);
                     }}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
+                    className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                   >
                     <option value="all">⚡ Todos los periodos</option>
                     <option value="month">📅 Filtrar por Mes</option>
@@ -717,7 +677,7 @@ export default function App() {
                         setSelectedFilterValue(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
+                      className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                     >
                       <option value="">Selecciona el mes...</option>
                       {availableMonthsForWorker.map(m => (
@@ -733,7 +693,7 @@ export default function App() {
                         setSelectedFilterValue(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
+                      className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
                     >
                       <option value="">Selecciona la semana...</option>
                       {availableWeeksForWorker.map(w => (
@@ -744,36 +704,36 @@ export default function App() {
                 </div>
 
                 {loading ? (
-                  <p className="text-center text-slate-500 py-8 text-sm">Cargando registros...</p>
+                  <p className="text-center text-slate-500 py-12 text-sm font-medium">Cargando registros...</p>
                 ) : filteredRecords.length === 0 ? (
-                  <p className="text-center text-slate-500 py-8 text-sm">No se encontraron registros para este filtro.</p>
+                  <p className="text-center text-slate-500 py-12 text-sm font-medium">No se encontraron registros para este filtro.</p>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-2xl border border-slate-800/60">
                     <table className="w-full text-left border-collapse min-w-[650px]">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
-                          <th className="pb-3 px-3">Trabajador</th>
-                          <th className="pb-3 px-3">Fecha</th>
-                          <th className="pb-3 px-3">Horario</th>
-                          <th className="pb-3 px-3">Horas</th>
-                          <th className="pb-3 px-3">Centro Costo</th>
-                          <th className="pb-3 px-3">Descripción</th>
-                          {!isReadOnly && <th className="pb-3 px-3 text-right print:hidden">Acciones</th>}
+                        <tr className="bg-slate-950/40 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-800/80">
+                          <th className="py-3.5 px-4">Trabajador</th>
+                          <th className="py-3.5 px-4">Fecha</th>
+                          <th className="py-3.5 px-4">Horario</th>
+                          <th className="py-3.5 px-4">Horas</th>
+                          <th className="py-3.5 px-4">Centro Costo</th>
+                          <th className="py-3.5 px-4">Descripción</th>
+                          {!isReadOnly && <th className="py-3.5 px-4 text-right print:hidden">Acciones</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                      <tbody className="divide-y divide-slate-800/50 text-xs sm:text-sm font-medium">
                         {currentRecords.map((rec) => (
-                          <tr key={rec.id} className="hover:bg-slate-800/40 transition">
-                            <td className="py-3 px-3 font-semibold text-white">{rec.worker_name || rec.trabajador}</td>
-                            <td className="py-3 px-3 text-slate-300">{rec.work_date || rec.fecha}</td>
-                            <td className="py-3 px-3 text-slate-400 text-xs">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
-                            <td className="py-3 px-3 font-bold text-emerald-400">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs</td>
-                            <td className="py-3 px-3 text-slate-400 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
-                            <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">{rec.description || rec.descripcion || "-"}</td>
+                          <tr key={rec.id} className="hover:bg-slate-800/30 transition-colors">
+                            <td className="py-4 px-4 font-bold text-white">{rec.worker_name || rec.trabajador}</td>
+                            <td className="py-4 px-4 text-slate-300">{rec.work_date || rec.fecha}</td>
+                            <td className="py-4 px-4 text-slate-400 text-xs">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
+                            <td className="py-4 px-4 font-extrabold text-emerald-400">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs</td>
+                            <td className="py-4 px-4 text-slate-400 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
+                            <td className="py-4 px-4 text-slate-300 text-xs max-w-xs truncate">{rec.description || rec.descripcion || "-"}</td>
                             {!isReadOnly && (
-                              <td className="py-3 px-3 text-right space-x-2 print:hidden whitespace-nowrap">
-                                <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">Editar</button>
-                                <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">Borrar</button>
+                              <td className="py-4 px-4 text-right space-x-2 print:hidden whitespace-nowrap">
+                                <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-bold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-xl transition-all">Editar</button>
+                                <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-bold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-all">Borrar</button>
                               </td>
                             )}
                           </tr>
@@ -785,21 +745,21 @@ export default function App() {
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-4 print:hidden">
+                <div className="flex items-center justify-between border-t border-slate-800/80 pt-5 mt-6 print:hidden">
                   <button
                     onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    className="px-4 py-2.5 bg-slate-950/60 border border-slate-800/80 rounded-2xl text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                   >
                     ← Anterior
                   </button>
-                  <span className="text-xs text-slate-400 font-medium">
+                  <span className="text-xs text-slate-400 font-semibold">
                     Página <strong className="text-white">{currentPage}</strong> de <strong className="text-white">{totalPages}</strong>
                   </span>
                   <button
                     onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    className="px-4 py-2.5 bg-slate-950/60 border border-slate-800/80 rounded-2xl text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                   >
                     Siguiente →
                   </button>
@@ -809,57 +769,57 @@ export default function App() {
           </div>
         ) : currentTab === "empleados" && !isReadOnly ? (
           <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl">
-              <h2 className="text-base sm:text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
-              <p className="text-xs text-slate-400 mb-6">Genera un usuario de solo vista vinculado a su número de cédula.</p>
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl">
+              <h2 className="text-base sm:text-lg font-bold text-white mb-1.5">👤 Crear Acceso para Empleado</h2>
+              <p className="text-xs text-slate-400 mb-6 font-medium">Genera un usuario de solo vista vinculado de forma segura a su número de cédula.</p>
 
               {empSuccessMsg && (
-                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs sm:text-sm text-center">
+                <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-xs sm:text-sm text-center font-bold shadow-sm">
                   {empSuccessMsg}
                 </div>
               )}
 
               <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario</label>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Usuario</label>
                   <input
                     type="text"
                     required
                     value={empUsername}
                     onChange={(e) => setEmpUsername(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                     placeholder="Ej. juan_emp"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Contraseña</label>
                   <input
                     type="password"
                     required
                     value={empPassword}
                     onChange={(e) => setEmpPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                     placeholder="••••••••"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Cédula del Empleado *</label>
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Cédula del Empleado *</label>
                   <input
                     type="text"
                     required
                     value={empCedula}
                     onChange={(e) => setEmpCedula(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                     placeholder="Ej. 1728394850"
                   />
                 </div>
 
-                <div className="md:col-span-3">
+                <div className="md:col-span-3 pt-2">
                   <button
                     type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition duration-200 text-sm"
+                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold py-3 rounded-2xl shadow-lg shadow-indigo-600/30 transition-all duration-300 text-sm active:scale-[0.99]"
                   >
                     Crear Cuenta de Empleado
                   </button>
@@ -867,37 +827,37 @@ export default function App() {
               </form>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl">
-              <h2 className="text-base sm:text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl">
+              <h2 className="text-base sm:text-lg font-bold text-white mb-6">📋 Lista de Usuarios Registrados</h2>
               {usersList.length === 0 ? (
-                <p className="text-slate-500 text-sm text-center py-4">No hay usuarios cargados.</p>
+                <p className="text-slate-500 text-sm text-center py-8 font-medium">No hay usuarios cargados.</p>
               ) : (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto rounded-2xl border border-slate-800/60">
                   <table className="w-full text-left border-collapse min-w-[500px]">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
-                        <th className="pb-3 px-3">ID</th>
-                        <th className="pb-3 px-3">Usuario</th>
-                        <th className="pb-3 px-3">Rol</th>
-                        <th className="pb-3 px-3">Cédula Vinculada</th>
-                        <th className="pb-3 px-3 text-right">Acciones</th>
+                      <tr className="bg-slate-950/40 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-800/80">
+                        <th className="py-3.5 px-4">ID</th>
+                        <th className="py-3.5 px-4">Usuario</th>
+                        <th className="py-3.5 px-4">Rol</th>
+                        <th className="py-3.5 px-4">Cédula Vinculada</th>
+                        <th className="py-3.5 px-4 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                    <tbody className="divide-y divide-slate-800/50 text-xs sm:text-sm font-medium">
                       {usersList.map((u) => (
-                        <tr key={u.id} className="hover:bg-slate-800/40 transition">
-                          <td className="py-3 px-3 text-slate-400">#{u.id}</td>
-                          <td className="py-3 px-3 font-semibold text-white">{u.username}</td>
-                          <td className="py-3 px-3">
-                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap ${u.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                        <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="py-4 px-4 text-slate-400">#{u.id}</td>
+                          <td className="py-4 px-4 font-bold text-white">{u.username}</td>
+                          <td className="py-4 px-4">
+                            <span className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm ${u.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
                               {u.role === 'admin' ? '👑 Admin' : '👁️ Empleado'}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-slate-300 font-mono text-xs">{u.cedula || "-"}</td>
-                          <td className="py-3 px-3 text-right">
+                          <td className="py-4 px-4 text-slate-300 font-mono text-xs">{u.cedula || "-"}</td>
+                          <td className="py-4 px-4 text-right">
                             <button
                               onClick={() => handleDeleteUser(u.id, u.username)}
-                              className="text-red-400 hover:text-red-300 text-xs font-semibold px-3 py-1 bg-red-500/10 rounded-lg transition"
+                              className="text-red-400 hover:text-red-300 text-xs font-bold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-all"
                             >
                               Eliminar
                             </button>
@@ -912,15 +872,15 @@ export default function App() {
           </div>
         ) : (
           <div className="space-y-6 max-w-5xl mx-auto">
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 p-6 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-white font-bold text-sm sm:text-base">Filtrar Estadísticas</h3>
-                <p className="text-xs text-slate-400">Selecciona un mes específico</p>
+                <h3 className="text-white font-bold text-base">Filtrar Estadísticas</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Selecciona un mes específico para analizar rendimiento</p>
               </div>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-auto"
+                className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all w-full sm:w-auto"
               >
                 <option value="all">📅 Todos los meses (Histórico)</option>
                 {availableMonths.map((m) => (
@@ -929,34 +889,43 @@ export default function App() {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl flex items-center justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-xs sm:text-sm font-medium">Horas del Periodo</p>
-                  <h3 className="text-3xl sm:text-4xl font-extrabold text-emerald-400 mt-1">{totalHorasStats.toFixed(1)} hrs</h3>
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Horas del Periodo</p>
+                  <h3 className="text-3xl sm:text-4xl font-extrabold text-emerald-400 mt-2">{totalHorasStats.toFixed(1)} hrs</h3>
                 </div>
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xl sm:text-2xl">⏱️</div>
+                <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 text-2xl shadow-inner">⏱️</div>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl flex items-center justify-between">
+              <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-xs sm:text-sm font-medium">Jornadas en el Periodo</p>
-                  <h3 className="text-3xl sm:text-4xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
+                  <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Jornadas en el Periodo</p>
+                  <h3 className="text-3xl sm:text-4xl font-extrabold text-indigo-400 mt-2">{recordsForStats.length}</h3>
                 </div>
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-xl sm:text-2xl">📊</div>
+                <div className="w-14 h-14 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400 text-2xl shadow-inner">📊</div>
               </div>
             </div>
 
-            {/* SECCIÓN DEL GRÁFICO ESTADÍSTICO */}
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h3 className="text-white font-bold text-base mb-4">📈 Horas Acumuladas por Trabajador</h3>
-              <div className="w-full h-72 sm:h-80 flex items-center justify-center">
-                {workersForChart.length === 0 ? (
-                  <p className="text-slate-500 text-sm">No hay datos suficientes para mostrar el gráfico en este periodo.</p>
-                ) : (
-                  <Bar data={chartData} options={chartOptions} />
-                )}
-              </div>
+            <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800/80 p-6 sm:p-8 rounded-3xl shadow-2xl">
+              <h3 className="text-white font-bold text-base mb-6">📈 Horas Totales por Trabajador</h3>
+              {chartData.length === 0 ? (
+                <p className="text-center text-slate-500 py-12 text-sm font-medium">No hay datos suficientes para mostrar el gráfico.</p>
+              ) : (
+                <div className="w-full h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.4} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "16px", color: "#fff", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)" }} 
+                      />
+                      <Bar dataKey="horas" fill="#6366f1" radius={[10, 10, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
           </div>
         )}
