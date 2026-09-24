@@ -21,12 +21,12 @@ export default function App() {
   const [usersList, setUsersList] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  const [searchTerm, setSearchTerm] = useState("");
+  // Nuevos estados para filtros avanzados
+  const [selectedWorkerFilter, setSelectedWorkerFilter] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [selectedFilterValue, setSelectedFilterValue] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
 
-  // Estado para la paginación (7 registros por página)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
@@ -262,16 +262,20 @@ export default function App() {
     return `${formatDate(monday)} al ${formatDate(sunday)}`;
   };
 
+  // Obtener lista única de nombres de trabajadores registrados
+  const uniqueWorkers = Array.from(new Set(records.map(r => r.worker_name || r.trabajador))).filter(Boolean).sort();
+
+  // Filtrado de registros en cascada (Trabajador -> Tipo de Periodo -> Mes/Semana)
   const filteredRecords = records.filter((rec) => {
-    const name = (rec.worker_name || rec.trabajador || "").toLowerCase();
-    const center = (rec.cost_center || rec.centro_costo || "").toLowerCase();
+    const worker = (rec.worker_name || rec.trabajador || "");
     const date = (rec.work_date || rec.fecha || "");
-    const desc = (rec.description || rec.descripcion || "").toLowerCase();
-    const term = searchTerm.toLowerCase();
 
-    const matchesSearch = name.includes(term) || center.includes(term) || date.includes(term) || desc.includes(term);
-    if (!matchesSearch) return false;
+    // 1. Filtro por Trabajador seleccionado
+    if (selectedWorkerFilter !== "all" && worker !== selectedWorkerFilter) {
+      return false;
+    }
 
+    // 2. Filtro por Mes o Semana específicos
     if (filterType === "month" && selectedFilterValue) {
       return date.startsWith(selectedFilterValue);
     }
@@ -281,7 +285,12 @@ export default function App() {
     return true;
   });
 
-  // Cálculo de paginación (7 elementos por página)
+  // Opciones de meses y semanas disponibles según el trabajador seleccionado
+  const recordsForWorker = selectedWorkerFilter === "all" ? records : records.filter(r => (r.worker_name || r.trabajador) === selectedWorkerFilter);
+  const availableMonthsForWorker = Array.from(new Set(recordsForWorker.map(r => (r.work_date || r.fecha || "").substring(0, 7)))).filter(Boolean).sort().reverse();
+  const availableWeeksForWorker = Array.from(new Set(recordsForWorker.map(r => getWeekNumber(r.work_date || r.fecha || "")))).filter(Boolean).sort().reverse();
+
+  // Paginación (7 elementos por página)
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage) || 1;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -437,8 +446,6 @@ export default function App() {
   }
 
   const availableMonths = Array.from(new Set(records.map(r => (r.work_date || r.fecha || "").substring(0, 7)))).filter(Boolean).sort().reverse();
-  const availableWeeks = Array.from(new Set(records.map(r => getWeekNumber(r.work_date || r.fecha || "")))).filter(Boolean).sort().reverse();
-
   const recordsForStats = records.filter(r => {
     if (selectedMonth === "all") return true;
     const d = r.work_date || r.fecha;
@@ -620,17 +627,22 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4 print:hidden">
-                  <input
-                    type="text"
-                    value={searchTerm}
+                {/* Filtros avanzados en cascada */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 print:hidden">
+                  <select
+                    value={selectedWorkerFilter}
                     onChange={(e) => {
-                      setSearchTerm(e.target.value);
+                      setSelectedWorkerFilter(e.target.value);
+                      setSelectedFilterValue("");
                       setCurrentPage(1);
                     }}
-                    placeholder="🔍 Buscar trabajador o centro..."
                     className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
-                  />
+                  >
+                    <option value="all">👤 Todos los trabajadores</option>
+                    {uniqueWorkers.map(w => (
+                      <option key={w} value={w}>Trabajador: {w}</option>
+                    ))}
+                  </select>
 
                   <select
                     value={filterType}
@@ -641,7 +653,7 @@ export default function App() {
                     }}
                     className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
                   >
-                    <option value="all">⚡ Todos los registros</option>
+                    <option value="all">⚡ Todos los periodos</option>
                     <option value="month">📅 Filtrar por Mes</option>
                     <option value="week">📆 Filtrar por Semana</option>
                   </select>
@@ -653,10 +665,10 @@ export default function App() {
                         setSelectedFilterValue(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition sm:col-span-2 md:col-span-1"
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
                     >
                       <option value="">Selecciona el mes...</option>
-                      {availableMonths.map(m => (
+                      {availableMonthsForWorker.map(m => (
                         <option key={m} value={m}>Mes: {m}</option>
                       ))}
                     </select>
@@ -669,10 +681,10 @@ export default function App() {
                         setSelectedFilterValue(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition sm:col-span-2 md:col-span-1"
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
                     >
                       <option value="">Selecciona la semana...</option>
-                      {availableWeeks.map(w => (
+                      {availableWeeksForWorker.map(w => (
                         <option key={w} value={w}>Semana: {w}</option>
                       ))}
                     </select>
@@ -682,7 +694,7 @@ export default function App() {
                 {loading ? (
                   <p className="text-center text-slate-500 py-8 text-sm">Cargando registros...</p>
                 ) : filteredRecords.length === 0 ? (
-                  <p className="text-center text-slate-500 py-8 text-sm">No se encontraron registros.</p>
+                  <p className="text-center text-slate-500 py-8 text-sm">No se encontraron registros para este filtro.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[650px]">
@@ -720,7 +732,7 @@ export default function App() {
                 )}
               </div>
 
-              {/* Controles de Paginación Estilizados */}
+              {/* Controles de Paginación */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-4 print:hidden">
                   <button
