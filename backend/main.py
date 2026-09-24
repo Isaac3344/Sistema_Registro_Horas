@@ -12,6 +12,7 @@ import models
 from database import engine, get_db
 
 SECRET_KEY = "tu_clave_secreta_super_segura_cambiala_en_produccion"
+ADMIN_SECRET_TOKEN = "ADMIN123*"  # Token secreto requerido para iniciar sesión como Administrador
 ALGORITHM = "HS256"
 security = HTTPBearer()
 
@@ -83,15 +84,19 @@ def register(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     password = str(credentials.get("password") or "").strip()
     cedula = str(credentials.get("cedula") or "").strip()
     role = str(credentials.get("role") or "admin").strip()
+    admin_token_input = str(credentials.get("admin_token") or "").strip()
 
     if not username or not password:
         raise HTTPException(status_code=400, detail="Usuario y contraseña requeridos")
+
+    if role == "admin":
+        if admin_token_input != ADMIN_SECRET_TOKEN:
+            raise HTTPException(status_code=403, detail="Token de seguridad de Administrador incorrecto")
 
     existing = db.execute(text("SELECT id FROM users WHERE username = :uname"), {"uname": username}).fetchone()
     if existing:
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
 
-    # Creamos el usuario de forma compatible con el modelo existente
     new_user = models.User(
         username=username, 
         password=password, 
@@ -101,7 +106,6 @@ def register(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    # Actualizamos el rol y la cédula mediante SQL nativo para evitar conflictos con el ORM
     try:
         with engine.connect() as conn:
             conn.execute(
@@ -123,6 +127,7 @@ def register(credentials: Dict[str, Any], db: Session = Depends(get_db)):
 def login(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     username = str(credentials.get("username") or "").strip()
     password = str(credentials.get("password") or "").strip()
+    admin_token_input = str(credentials.get("admin_token") or "").strip()
 
     user = db.query(models.User).filter(models.User.username == username).first()
     if not user:
@@ -131,10 +136,13 @@ def login(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     if (user.password or user.hashed_password) != password:
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
-    # Consultar rol y cédula de forma segura por SQL nativo
     user_res = db.execute(text("SELECT role, cedula FROM users WHERE id = :uid"), {"uid": user.id}).fetchone()
     user_role = user_res[0] if user_res and len(user_res) > 0 and user_res[0] else "admin"
     user_cedula = user_res[1] if user_res and len(user_res) > 1 and user_res[1] else ""
+
+    if user_role == "admin":
+        if admin_token_input != ADMIN_SECRET_TOKEN:
+            raise HTTPException(status_code=403, detail="Token de seguridad de Administrador incorrecto")
 
     access_token = create_access_token(data={"sub": user.id})
     return {"id": user.id, "username": user.username, "role": user_role, "cedula": user_cedula, "token": access_token}

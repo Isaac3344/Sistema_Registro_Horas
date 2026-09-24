@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
 import { 
-  registerUser, 
-  loginUser, 
   fetchRecords, 
   createRecord, 
   updateRecord, 
@@ -14,6 +12,8 @@ export default function App() {
   const [userRole, setUserRole] = useState(localStorage.getItem("userRole") || "admin");
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
+  const [adminTokenInput, setAdminTokenInput] = useState("");
+  const [loginRoleType, setLoginRoleType] = useState("admin"); // 'admin' o 'employee'
   const [authError, setAuthError] = useState("");
 
   const [currentTab, setCurrentTab] = useState("gestion");
@@ -102,7 +102,31 @@ export default function App() {
     e.preventDefault();
     setAuthError("");
     try {
-      let data = await loginUser(usernameInput, passwordInput);
+      let response;
+      if (loginRoleType === "admin") {
+        response = await fetch("https://backend-registro-horas.onrender.com/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            username: usernameInput, 
+            password: passwordInput, 
+            admin_token: adminTokenInput 
+          })
+        });
+      } else {
+        response = await fetch("https://backend-registro-horas.onrender.com/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            username: usernameInput, 
+            password: passwordInput 
+          })
+        });
+      }
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Error al iniciar sesión");
+
       const assignedRole = data.role || "admin";
       setToken(data.token);
       setUserRole(assignedRole);
@@ -110,6 +134,7 @@ export default function App() {
       localStorage.setItem("userRole", assignedRole);
       setUsernameInput("");
       setPasswordInput("");
+      setAdminTokenInput("");
     } catch (err) {
       setAuthError(err.message);
     }
@@ -119,12 +144,19 @@ export default function App() {
     e.preventDefault();
     setEmpSuccessMsg("");
     try {
-      await registerUser({
-        username: empUsername,
-        password: empPassword,
-        role: "employee",
-        cedula: empCedula
+      const response = await fetch("https://backend-registro-horas.onrender.com/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: empUsername,
+          password: empPassword,
+          role: "employee",
+          cedula: empCedula
+        })
       });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Error al crear empleado");
+
       setEmpSuccessMsg(`¡Acceso creado para ${empUsername} (Cédula: ${empCedula})!`);
       setEmpUsername("");
       setEmpPassword("");
@@ -316,6 +348,27 @@ export default function App() {
             <p className="text-slate-400 text-sm mt-1">Plataforma Profesional de Horas</p>
           </div>
 
+          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
+            <button
+              type="button"
+              onClick={() => setLoginRoleType("admin")}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
+                loginRoleType === "admin" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              👑 Administrador
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginRoleType("employee")}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
+                loginRoleType === "employee" ? "bg-emerald-600 text-white shadow" : "text-slate-400 hover:text-white"
+              }`}
+            >
+              👁️ Empleado (Vista)
+            </button>
+          </div>
+
           {authError && (
             <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-center">
               {authError}
@@ -346,6 +399,20 @@ export default function App() {
                 placeholder="••••••••"
               />
             </div>
+
+            {loginRoleType === "admin" && (
+              <div>
+                <label className="block text-xs font-semibold text-indigo-400 uppercase mb-1">🔑 Token Secreto de Admin</label>
+                <input
+                  type="password"
+                  required
+                  value={adminTokenInput}
+                  onChange={(e) => setAdminTokenInput(e.target.value)}
+                  className="w-full bg-slate-950/80 border border-indigo-500/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-400 transition"
+                  placeholder="Código token de seguridad"
+                />
+              </div>
+            )}
 
             <button
               type="submit"
