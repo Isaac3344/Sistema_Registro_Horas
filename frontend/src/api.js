@@ -1,5 +1,18 @@
 const API_URL = "https://backend-registro-horas.onrender.com";
 
+export const registerUser = async (username, password) => {
+  const res = await fetch(`${API_URL}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.detail || "Error al registrar usuario");
+  }
+  return await res.json();
+};
+
 export const loginUser = async (username, password) => {
   const res = await fetch(`${API_URL}/login`, {
     method: "POST",

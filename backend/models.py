@@ -7,7 +7,8 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
-    password = Column(String, nullable=False)
+    password = Column(String, nullable=True)
+    hashed_password = Column(String, nullable=True)
 
     records = relationship("Record", back_populates="owner")
 
@@ -22,7 +23,6 @@ class Record(Base):
     calculated_hours = Column(Float, nullable=False)
     cost_center = Column(String, nullable=True)
     description = Column(String, nullable=True)
-    
-    # Vinculación exclusiva al usuario
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
     owner = relationship("User", back_populates="records")

@@ -6,10 +6,11 @@ from sqlalchemy import text
 import models
 from database import engine, get_db
 
-# Crear tablas y agregar columnas faltantes automáticamente en PostgreSQL Neon
+# Migración automática para quitar la restricción NOT NULL de hashed_password y agregar user_id
 try:
     models.Base.metadata.create_all(bind=engine)
     with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR;"))
         conn.execute(text("ALTER TABLE records ADD COLUMN IF NOT EXISTS user_id INTEGER;"))
         conn.commit()
@@ -30,45 +31,48 @@ app.add_middleware(
 def read_root():
     return {"status": "online", "message": "API Multiusuario activa"}
 
-# LOGIN Y REGISTRO AUTOMÁTICO EN POSTGRESQL
+# 1. ENDPOINT DE REGISTRO
+@app.post("/register")
+def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
+    username = credentials.get("username", "").strip()
+    password = credentials.get("password", "").strip()
+
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Usuario y contraseña requeridos")
+
+    existing_user = db.query(models.User).filter(models.User.username == username).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
+
+    # Guardar en ambos campos para resolver cualquier restricción de esquema previo
+    new_user = models.User(username=username, password=password, hashed_password=password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {"id": new_user.id, "username": new_user.username, "message": "Usuario registrado exitosamente"}
+
+# 2. ENDPOINT DE LOGIN
 @app.post("/login")
 def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
     password = credentials.get("password", "").strip()
 
     if not username or not password:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Usuario y contraseña requeridos"
-        )
+        raise HTTPException(status_code=400, detail="Usuario y contraseña requeridos")
 
-    try:
-        user = db.query(models.User).filter(models.User.username == username).first()
+    user = db.query(models.User).filter(models.User.username == username).first()
 
-        if not user:
-            user = models.User(username=username, password=password)
-            db.add(user)
-            db.commit()
-            db.refresh(user)
-        else:
-            if user.password != password:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Contraseña incorrecta"
-                )
+    if not user:
+        raise HTTPException(status_code=401, detail="El usuario no existe. Por favor regístrate primero.")
 
-        return {"id": user.id, "username": user.username, "message": "Autenticación exitosa"}
-    except HTTPException:
-        raise
-    except Exception as e:
-        db.rollback()
-        print(f"Error en /login: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al autenticar: {str(e)}"
-        )
+    user_pass = user.password or user.hashed_password
+    if user_pass != password:
+        raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
-# OBTENER REGISTROS EXCLUSIVOS DEL USUARIO
+    return {"id": user.id, "username": user.username, "message": "Autenticación exitosa"}
+
+# OBTENER REGISTROS DEL USUARIO
 @app.get("/records")
 def get_records(user_id: int, db: Session = Depends(get_db)):
     try:
@@ -76,7 +80,7 @@ def get_records(user_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# CREAR REGISTRO VINCULADO AL USUARIO
+# CREAR REGISTRO PARA EL USUARIO
 @app.post("/records")
 def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depends(get_db)):
     try:
