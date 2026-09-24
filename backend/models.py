@@ -16,8 +16,8 @@ class Record(Base):
     __tablename__ = "records"
 
     id = Column(Integer, primary_key=True, index=True)
-    
-    # Atributos nuevos
+
+    # Columnas en inglés
     worker_name = Column(String, nullable=True)
     work_date = Column(String, nullable=True)
     entry_time = Column(String, nullable=True)
@@ -26,7 +26,7 @@ class Record(Base):
     cost_center = Column(String, nullable=True)
     description = Column(String, nullable=True)
 
-    # Atributos antiguos (para bases de datos existentes)
+    # Columnas en español (compatibilidad)
     trabajador = Column(String, nullable=True)
     fecha = Column(String, nullable=True)
     hora_entrada = Column(String, nullable=True)

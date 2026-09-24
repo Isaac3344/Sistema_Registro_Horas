@@ -6,48 +6,43 @@ from sqlalchemy import text
 import models
 from database import engine, get_db
 
-# Migración de estructura y eliminación de restricciones NOT NULL en PostgreSQL
-try:
-    models.Base.metadata.create_all(bind=engine)
-    with engine.connect() as conn:
-        # 1. Ajustes en tabla users
-        try:
-            conn.execute(text("ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;"))
-        except Exception:
-            pass
-        try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR;"))
-        except Exception:
-            pass
+# 1. Crear tablas si no existen
+models.Base.metadata.create_all(bind=engine)
 
-        # 2. Agregar nuevas columnas si no existen
-        new_cols = [
-            ("worker_name", "VARCHAR"),
-            ("work_date", "VARCHAR"),
-            ("entry_time", "VARCHAR"),
-            ("exit_time", "VARCHAR"),
-            ("calculated_hours", "FLOAT"),
-            ("cost_center", "VARCHAR"),
-            ("description", "VARCHAR"),
-            ("user_id", "INTEGER")
-        ]
-        for col, col_type in new_cols:
-            try:
-                conn.execute(text(f"ALTER TABLE records ADD COLUMN IF NOT EXISTS {col} {col_type};"))
-            except Exception:
-                pass
+# 2. Ejecutar cada instrucción de migración en su propia transacción aislada
+migration_sqls = [
+    "ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS user_id INTEGER;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS worker_name VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS work_date VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS entry_time VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS exit_time VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS calculated_hours FLOAT;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS cost_center VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS description VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS trabajador VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS fecha VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS hora_salida VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS horas FLOAT;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS centro_costo VARCHAR;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS descripcion VARCHAR;",
+    "ALTER TABLE records ALTER COLUMN trabajador DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN fecha DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN hora_entrada DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN hora_salida DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN horas DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN centro_costo DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN descripcion DROP NOT NULL;",
+]
 
-        # 3. Remover restricciones NOT NULL de columnas en español
-        legacy_cols = ["trabajador", "fecha", "hora_entrada", "hora_salida", "horas", "centro_costo", "descripcion"]
-        for col in legacy_cols:
-            try:
-                conn.execute(text(f"ALTER TABLE records ALTER COLUMN {col} DROP NOT NULL;"))
-            except Exception:
-                pass
-
-        conn.commit()
-except Exception as e:
-    print(f"Sincronizando base de datos: {e}")
+for sql_query in migration_sqls:
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(sql_query))
+    except Exception as err:
+        print(f"Aviso migración ({sql_query}): {err}")
 
 app = FastAPI(title="API Multiusuario Control de Horas")
 
@@ -63,7 +58,7 @@ app.add_middleware(
 def read_root():
     return {"status": "online", "message": "API Multiusuario activa"}
 
-# REGISTRO
+# REGISTRO DE USUARIOS
 @app.post("/register")
 def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -83,7 +78,7 @@ def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
 
     return {"id": new_user.id, "username": new_user.username, "message": "Usuario registrado exitosamente"}
 
-# LOGIN
+# INICIO DE SESIÓN
 @app.post("/login")
 def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -103,15 +98,16 @@ def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
 
     return {"id": user.id, "username": user.username, "message": "Autenticación exitosa"}
 
-# OBTENER REGISTROS DE USUARIO
+# OBTENER REGISTROS DE UN USUARIO
 @app.get("/records")
 def get_records(user_id: int, db: Session = Depends(get_db)):
     try:
         return db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.id.desc()).all()
     except Exception as e:
+        print(f"Error en GET /records: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# CREAR REGISTRO
+# CREAR REGISTRO PARA UN USUARIO
 @app.post("/records")
 def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depends(get_db)):
     try:
