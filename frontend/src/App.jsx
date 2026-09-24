@@ -13,7 +13,7 @@ export default function App() {
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [adminTokenInput, setAdminTokenInput] = useState("");
-  const [loginRoleType, setLoginRoleType] = useState("admin"); // 'admin' o 'employee'
+  const [loginRoleType, setLoginRoleType] = useState("admin");
   const [authError, setAuthError] = useState("");
 
   const [currentTab, setCurrentTab] = useState("gestion");
@@ -157,7 +157,7 @@ export default function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Error al crear empleado");
 
-      setEmpSuccessMsg(`¡Acceso creado para ${empUsername} (Cédula: ${empCedula})!`);
+      setEmpSuccessMsg(`¡Acceso creado para ${empUsername}!`);
       setEmpUsername("");
       setEmpPassword("");
       setEmpCedula("");
@@ -336,16 +336,16 @@ export default function App() {
   if (!token) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
+        <div className="absolute -top-40 -left-40 w-72 h-72 sm:w-96 sm:h-96 bg-indigo-600/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -right-40 w-72 h-72 sm:w-96 sm:h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
 
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
+        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 p-6 sm:p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
           <div className="text-center mb-6">
             <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-2 shadow-inner">
               ⚡
             </div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Iniciar Sesión</h1>
-            <p className="text-slate-400 text-sm mt-1">Plataforma Profesional de Horas</p>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">Iniciar Sesión</h1>
+            <p className="text-slate-400 text-xs sm:text-sm mt-1">Plataforma Profesional de Horas</p>
           </div>
 
           <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
@@ -365,12 +365,12 @@ export default function App() {
                 loginRoleType === "employee" ? "bg-emerald-600 text-white shadow" : "text-slate-400 hover:text-white"
               }`}
             >
-              👁️ Empleado (Vista)
+              👁️ Empleado
             </button>
           </div>
 
           {authError && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-center">
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs sm:text-sm text-center">
               {authError}
             </div>
           )}
@@ -383,7 +383,7 @@ export default function App() {
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
                 placeholder="Ingresa tu usuario"
               />
             </div>
@@ -395,7 +395,7 @@ export default function App() {
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
                 placeholder="••••••••"
               />
             </div>
@@ -408,7 +408,7 @@ export default function App() {
                   required
                   value={adminTokenInput}
                   onChange={(e) => setAdminTokenInput(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-indigo-500/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-400 transition"
+                  className="w-full bg-slate-950/80 border border-indigo-500/50 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-400 transition"
                   placeholder="Código token de seguridad"
                 />
               </div>
@@ -416,7 +416,7 @@ export default function App() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200"
+              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200 text-sm sm:text-base"
             >
               Entrar al Sistema
             </button>
@@ -439,23 +439,33 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between print:hidden">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
-            AR
+      {/* Header responsive con diseño flexible */}
+      <header className="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 print:hidden">
+        <div className="flex items-center justify-between w-full md:w-auto">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold text-sm">
+              AR
+            </div>
+            <div>
+              <h1 className="font-bold text-white text-base sm:text-lg">APP REGISTRO</h1>
+              <p className="text-[11px] text-slate-400">
+                {isReadOnly ? "👁️ Empleado (Vista)" : "Panel Administrador"}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-white text-lg">APP REGISTRO</h1>
-            <p className="text-xs text-slate-400">
-              {isReadOnly ? "👁️ Modo Empleado (Solo Vista)" : "Panel de Administrador"}
-            </p>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="md:hidden bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition"
+          >
+            Salir
+          </button>
         </div>
 
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+        {/* Pestañas de navegación adaptables */}
+        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 w-full md:w-auto overflow-x-auto justify-center">
           <button
             onClick={() => setCurrentTab("gestion")}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            className={`flex-1 md:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
               currentTab === "gestion" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
             }`}
           >
@@ -463,7 +473,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setCurrentTab("estadisticas")}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            className={`flex-1 md:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
               currentTab === "estadisticas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
             }`}
           >
@@ -472,31 +482,31 @@ export default function App() {
           {!isReadOnly && (
             <button
               onClick={() => setCurrentTab("empleados")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              className={`flex-1 md:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
                 currentTab === "empleados" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
               }`}
             >
-              👤 Gestión de Accesos
+              👤 Accesos
             </button>
           )}
         </div>
 
         <button
           onClick={handleLogout}
-          className="bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold transition"
+          className="hidden md:block bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold transition"
         >
           Cerrar Sesión
         </button>
       </header>
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-3 sm:p-6 max-w-7xl mx-auto w-full">
         {currentTab === "gestion" ? (
           <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-6`}>
             
             {!isReadOnly && (
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit print:hidden">
+              <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl h-fit print:hidden">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-bold text-white text-base">
+                  <h2 className="font-bold text-white text-sm sm:text-base">
                     {editingId ? "✏️ Editar Registro" : "➕ Nuevo Registro"}
                   </h2>
                   <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg text-xs font-bold">
@@ -504,7 +514,7 @@ export default function App() {
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmitRecord} className="space-y-4">
+                <form onSubmit={handleSubmitRecord} className="space-y-3 sm:space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Trabajador *</label>
                     <input
@@ -576,7 +586,7 @@ export default function App() {
 
                   <button
                     type="submit"
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition duration-200"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition duration-200 text-sm"
                   >
                     {editingId ? "Actualizar Registro" : "Guardar Registro"}
                   </button>
@@ -584,30 +594,30 @@ export default function App() {
               </div>
             )}
 
-            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col`}>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 print:hidden">
+            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col`}>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 print:hidden">
                 <div>
-                  <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
+                  <h2 className="font-bold text-white text-base sm:text-lg">Historial de Registros</h2>
                   <p className="text-xs text-slate-400">Consulta y exporta tus jornadas</p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button onClick={handleExportExcel} className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                  <button onClick={handleExportExcel} className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
                     📊 Excel ({filteredRecords.length})
                   </button>
-                  <button onClick={handleExportPDF} className="bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                  <button onClick={handleExportPDF} className="flex-1 sm:flex-none bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
                     📄 PDF
                   </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 print:hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4 print:hidden">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="🔍 Buscar trabajador o centro..."
-                  className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
                 />
 
                 <select
@@ -616,7 +626,7 @@ export default function App() {
                     setFilterType(e.target.value);
                     setSelectedFilterValue("");
                   }}
-                  className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
                 >
                   <option value="all">⚡ Todos los registros</option>
                   <option value="month">📅 Filtrar por Mes</option>
@@ -627,7 +637,7 @@ export default function App() {
                   <select
                     value={selectedFilterValue}
                     onChange={(e) => setSelectedFilterValue(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition sm:col-span-2 md:col-span-1"
                   >
                     <option value="">Selecciona el mes...</option>
                     {availableMonths.map(m => (
@@ -640,7 +650,7 @@ export default function App() {
                   <select
                     value={selectedFilterValue}
                     onChange={(e) => setSelectedFilterValue(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition sm:col-span-2 md:col-span-1"
                   >
                     <option value="">Selecciona la semana...</option>
                     {availableWeeks.map(w => (
@@ -651,12 +661,12 @@ export default function App() {
               </div>
 
               {loading ? (
-                <p className="text-center text-slate-500 py-8">Cargando registros...</p>
+                <p className="text-center text-slate-500 py-8 text-sm">Cargando registros...</p>
               ) : filteredRecords.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">No se encontraron registros.</p>
+                <p className="text-center text-slate-500 py-8 text-sm">No se encontraron registros.</p>
               ) : (
                 <div className="overflow-x-auto flex-1">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse min-w-[650px]">
                     <thead>
                       <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
                         <th className="pb-3 px-3">Trabajador</th>
@@ -668,7 +678,7 @@ export default function App() {
                         {!isReadOnly && <th className="pb-3 px-3 text-right print:hidden">Acciones</th>}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-sm">
+                    <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
                       {filteredRecords.map((rec) => (
                         <tr key={rec.id} className="hover:bg-slate-800/40 transition">
                           <td className="py-3 px-3 font-semibold text-white">{rec.worker_name || rec.trabajador}</td>
@@ -678,7 +688,7 @@ export default function App() {
                           <td className="py-3 px-3 text-slate-400 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
                           <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">{rec.description || rec.descripcion || "-"}</td>
                           {!isReadOnly && (
-                            <td className="py-3 px-3 text-right space-x-2 print:hidden">
+                            <td className="py-3 px-3 text-right space-x-2 print:hidden whitespace-nowrap">
                               <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">Editar</button>
                               <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">Borrar</button>
                             </td>
@@ -693,12 +703,12 @@ export default function App() {
           </div>
         ) : currentTab === "empleados" && !isReadOnly ? (
           <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h2 className="text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
+            <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl">
+              <h2 className="text-base sm:text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
               <p className="text-xs text-slate-400 mb-6">Genera un usuario de solo vista vinculado a su número de cédula.</p>
 
               {empSuccessMsg && (
-                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm text-center">
+                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs sm:text-sm text-center">
                   {empSuccessMsg}
                 </div>
               )}
@@ -743,7 +753,7 @@ export default function App() {
                 <div className="md:col-span-3">
                   <button
                     type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition duration-200"
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition duration-200 text-sm"
                   >
                     Crear Cuenta de Empleado
                   </button>
@@ -751,13 +761,13 @@ export default function App() {
               </form>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h2 className="text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
+            <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl">
+              <h2 className="text-base sm:text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
               {usersList.length === 0 ? (
                 <p className="text-slate-500 text-sm text-center py-4">No hay usuarios cargados.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse min-w-[500px]">
                     <thead>
                       <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
                         <th className="pb-3 px-3">ID</th>
@@ -767,14 +777,14 @@ export default function App() {
                         <th className="pb-3 px-3 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-sm">
+                    <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
                       {usersList.map((u) => (
                         <tr key={u.id} className="hover:bg-slate-800/40 transition">
                           <td className="py-3 px-3 text-slate-400">#{u.id}</td>
                           <td className="py-3 px-3 font-semibold text-white">{u.username}</td>
                           <td className="py-3 px-3">
-                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
-                              {u.role === 'admin' ? '👑 Administrador' : '👁️ Empleado (Solo Vista)'}
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap ${u.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                              {u.role === 'admin' ? '👑 Admin' : '👁️ Empleado'}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-slate-300 font-mono text-xs">{u.cedula || "-"}</td>
@@ -796,15 +806,15 @@ export default function App() {
           </div>
         ) : (
           <div className="space-y-6 max-w-5xl mx-auto">
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center justify-between">
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-white font-bold text-base">Filtrar Estadísticas</h3>
+                <h3 className="text-white font-bold text-sm sm:text-base">Filtrar Estadísticas</h3>
                 <p className="text-xs text-slate-400">Selecciona un mes específico</p>
               </div>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 w-full sm:w-auto"
               >
                 <option value="all">📅 Todos los meses (Histórico)</option>
                 {availableMonths.map((m) => (
@@ -813,21 +823,21 @@ export default function App() {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Horas del Periodo</p>
-                  <h3 className="text-4xl font-extrabold text-emerald-400 mt-1">{totalHorasStats.toFixed(1)} hrs</h3>
+                  <p className="text-slate-400 text-xs sm:text-sm font-medium">Horas del Periodo</p>
+                  <h3 className="text-3xl sm:text-4xl font-extrabold text-emerald-400 mt-1">{totalHorasStats.toFixed(1)} hrs</h3>
                 </div>
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-2xl">⏱️</div>
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xl sm:text-2xl">⏱️</div>
               </div>
 
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
+              <div className="bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-2xl shadow-xl flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Jornadas en el Periodo</p>
-                  <h3 className="text-4xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
+                  <p className="text-slate-400 text-xs sm:text-sm font-medium">Jornadas en el Periodo</p>
+                  <h3 className="text-3xl sm:text-4xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
                 </div>
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-2xl">📊</div>
+                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-xl sm:text-2xl">📊</div>
               </div>
             </div>
           </div>
