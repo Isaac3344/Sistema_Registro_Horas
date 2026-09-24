@@ -1,13 +1,42 @@
+import jwt
 import traceback
+from datetime import datetime, timedelta
 from typing import Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 import models
 from database import engine, get_db
 
-app = FastAPI(title="API Multiusuario Control de Horas")
+# --- CONFIGURACIÓN DE SEGURIDAD JWT ---
+SECRET_KEY = "tu_clave_secreta_super_segura_cambiala_en_produccion"
+ALGORITHM = "HS256"
+security = HTTPBearer()
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=7) # El token dura 7 días
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Token inválido")
+        return user_id
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="El token ha expirado. Inicia sesión nuevamente.")
+    except Exception:
+        raise HTTPException(status_code=401, detail="No autorizado")
+# --------------------------------------
+
+app = FastAPI(title="API Multiusuario Segura con JWT")
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,21 +55,30 @@ async def global_exception_handler(request: Request, exc: Exception):
         headers={"Access-Control-Allow-Origin": "*"}
     )
 
-# --- RESET DE BASE DE DATOS (SOLUCIÓN DEFINITIVA) ---
+# Saneamiento automático de BD Neon
 try:
-    # 1. Borrar todas las tablas antiguas con errores
-    models.Base.metadata.drop_all(bind=engine)
-    # 2. Crear las tablas nuevamente con la estructura perfecta de models.py
     models.Base.metadata.create_all(bind=engine)
-    print("Base de datos reseteada y creada con éxito.")
-except Exception as e:
-    print(f"Error al resetear esquema DB: {e}")
+    all_columns = [
+        "trabajador", "fecha", "hora_entrada", "hora_salida", "horas", "centro_costo", "descripcion",
+        "worker_name", "work_date", "entry_time", "exit_time", "calculated_hours", "cost_center", "description", "user_id"
+    ]
+    with engine.connect() as conn:
+        for col in all_columns:
+            try:
+                col_type = "DOUBLE PRECISION" if col in ["horas", "calculated_hours"] else ("INTEGER" if col == "user_id" else "VARCHAR")
+                conn.execute(text(f"ALTER TABLE records ADD COLUMN IF NOT EXISTS {col} {col_type};"))
+                conn.execute(text(f"ALTER TABLE records ALTER COLUMN {col} DROP NOT NULL;"))
+                conn.commit()
+            except Exception:
+                pass
+except Exception:
+    pass
 
 @app.get("/")
 def read_root():
-    return {"status": "online", "message": "API Multiusuario activa"}
+    return {"status": "online", "message": "API JWT Segura activa"}
 
-# REGISTRO DE USUARIOS
+# 1. REGISTRO DE USUARIOS (Retorna Token)
 @app.post("/register")
 def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
@@ -49,8 +87,7 @@ def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     if not username or not password:
         raise HTTPException(status_code=400, detail="Usuario y contraseña requeridos")
 
-    existing_user = db.query(models.User).filter(models.User.username == username).first()
-    if existing_user:
+    if db.query(models.User).filter(models.User.username == username).first():
         raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
 
     new_user = models.User(username=username, password=password, hashed_password=password)
@@ -58,65 +95,60 @@ def register(credentials: Dict[str, str], db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
-    return {"id": new_user.id, "username": new_user.username, "message": "Usuario registrado exitosamente"}
+    # Generar Token
+    access_token = create_access_token(data={"sub": new_user.id})
+    return {"id": new_user.id, "username": new_user.username, "token": access_token}
 
-# INICIO DE SESIÓN
+# 2. INICIO DE SESIÓN (Retorna Token)
 @app.post("/login")
 def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
     username = credentials.get("username", "").strip()
     password = credentials.get("password", "").strip()
 
-    if not username or not password:
-        raise HTTPException(status_code=400, detail="Usuario y contraseña requeridos")
-
     user = db.query(models.User).filter(models.User.username == username).first()
-
     if not user:
-        raise HTTPException(status_code=401, detail="El usuario no existe. Por favor regístrate primero.")
+        raise HTTPException(status_code=401, detail="El usuario no existe")
 
-    user_pass = user.password or user.hashed_password
-    if user_pass != password:
+    if (user.password or user.hashed_password) != password:
         raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
-    return {"id": user.id, "username": user.username, "message": "Autenticación exitosa"}
+    # Generar Token
+    access_token = create_access_token(data={"sub": user.id})
+    return {"id": user.id, "username": user.username, "token": access_token}
 
-# OBTENER REGISTROS
+# 3. OBTENER REGISTROS (Protegido con JWT)
 @app.get("/records")
-def get_records(user_id: int, db: Session = Depends(get_db)):
+def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         return db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.id.desc()).all()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# CREAR REGISTRO 
+# 4. CREAR REGISTRO (Protegido con JWT)
 @app.post("/records")
-def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depends(get_db)):
+def create_record(record_data: Dict[str, Any], user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
-        user_exists = db.query(models.User).filter(models.User.id == user_id).first()
-        valid_user_id = user_id if user_exists else None
-
         db_record = models.Record(
-            worker_name=record_data.get("worker_name", ""),
-            work_date=record_data.get("work_date", ""),
-            entry_time=record_data.get("entry_time", ""),
-            exit_time=record_data.get("exit_time", ""),
-            calculated_hours=float(record_data.get("calculated_hours", 0.0)),
-            cost_center=record_data.get("cost_center", ""),
-            description=record_data.get("description", ""),
-            user_id=valid_user_id
+            worker_name=str(record_data.get("worker_name") or ""),
+            work_date=str(record_data.get("work_date") or ""),
+            entry_time=str(record_data.get("entry_time") or ""),
+            exit_time=str(record_data.get("exit_time") or ""),
+            calculated_hours=float(record_data.get("calculated_hours") or 0.0),
+            cost_center=str(record_data.get("cost_center") or ""),
+            description=str(record_data.get("description") or ""),
+            user_id=user_id # El ID viene encriptado en el token, no de la URL
         )
-
         db.add(db_record)
         db.commit()
         db.refresh(db_record)
         return db_record
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error al guardar registro: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-# ACTUALIZAR REGISTRO
+# 5. ACTUALIZAR REGISTRO (Protegido con JWT)
 @app.put("/records/{record_id}")
-def update_record(record_id: int, record_data: Dict[str, Any], user_id: int, db: Session = Depends(get_db)):
+def update_record(record_id: int, record_data: Dict[str, Any], user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         db_record = db.query(models.Record).filter(models.Record.id == record_id, models.Record.user_id == user_id).first()
         if not db_record:
@@ -129,25 +161,28 @@ def update_record(record_id: int, record_data: Dict[str, Any], user_id: int, db:
         db_record.calculated_hours = float(record_data.get("calculated_hours", db_record.calculated_hours))
         db_record.cost_center = record_data.get("cost_center", db_record.cost_center)
         db_record.description = record_data.get("description", db_record.description)
-
+        
         db.commit()
         db.refresh(db_record)
         return db_record
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-# ELIMINAR REGISTRO
+# 6. ELIMINAR REGISTRO (Protegido con JWT)
 @app.delete("/records/{record_id}")
-def delete_record(record_id: int, user_id: int, db: Session = Depends(get_db)):
+def delete_record(record_id: int, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         db_record = db.query(models.Record).filter(models.Record.id == record_id, models.Record.user_id == user_id).first()
         if not db_record:
             raise HTTPException(status_code=404, detail="Registro no encontrado")
-
         db.delete(db_record)
         db.commit()
-        return {"message": "Eliminado correctamente", "id": record_id}
+        return {"message": "Eliminado"}
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

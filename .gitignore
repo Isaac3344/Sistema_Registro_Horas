@@ -12,3 +12,4 @@ backend/__pycache__/
 .env
 .env.local
 .DS_Store
+*.session.sql
