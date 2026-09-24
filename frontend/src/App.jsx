@@ -26,6 +26,10 @@ export default function App() {
   const [selectedFilterValue, setSelectedFilterValue] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
 
+  // Estado para la paginación (7 registros por página)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 7;
+
   const [workerName, setWorkerName] = useState("");
   const [workDate, setWorkDate] = useState(new Date().toISOString().split("T")[0]);
   const [entryTime, setEntryTime] = useState("08:00");
@@ -277,6 +281,12 @@ export default function App() {
     return true;
   });
 
+  // Cálculo de paginación (7 elementos por página)
+  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage) || 1;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentRecords = filteredRecords.slice(indexOfFirstItem, indexOfLastItem);
+
   const handleExportExcel = () => {
     if (filteredRecords.length === 0) {
       alert("No hay registros para exportar.");
@@ -439,7 +449,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Header responsive con diseño flexible */}
       <header className="bg-slate-900 border-b border-slate-800 px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 print:hidden">
         <div className="flex items-center justify-between w-full md:w-auto">
           <div className="flex items-center gap-3">
@@ -461,7 +470,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Pestañas de navegación adaptables */}
         <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 w-full md:w-auto overflow-x-auto justify-center">
           <button
             onClick={() => setCurrentTab("gestion")}
@@ -594,109 +602,144 @@ export default function App() {
               </div>
             )}
 
-            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col`}>
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 print:hidden">
-                <div>
-                  <h2 className="font-bold text-white text-base sm:text-lg">Historial de Registros</h2>
-                  <p className="text-xs text-slate-400">Consulta y exporta tus jornadas</p>
+            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl flex flex-col justify-between`}>
+              <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 print:hidden">
+                  <div>
+                    <h2 className="font-bold text-white text-base sm:text-lg">Historial de Registros</h2>
+                    <p className="text-xs text-slate-400">Consulta y exporta tus jornadas</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button onClick={handleExportExcel} className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                      📊 Excel ({filteredRecords.length})
+                    </button>
+                    <button onClick={handleExportPDF} className="flex-1 sm:flex-none bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                      📄 PDF
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  <button onClick={handleExportExcel} className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
-                    📊 Excel ({filteredRecords.length})
-                  </button>
-                  <button onClick={handleExportPDF} className="flex-1 sm:flex-none bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
-                    📄 PDF
-                  </button>
-                </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4 print:hidden">
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="🔍 Buscar trabajador o centro..."
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
+                  />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4 print:hidden">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="🔍 Buscar trabajador o centro..."
-                  className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
-                />
-
-                <select
-                  value={filterType}
-                  onChange={(e) => {
-                    setFilterType(e.target.value);
-                    setSelectedFilterValue("");
-                  }}
-                  className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
-                >
-                  <option value="all">⚡ Todos los registros</option>
-                  <option value="month">📅 Filtrar por Mes</option>
-                  <option value="week">📆 Filtrar por Semana</option>
-                </select>
-
-                {filterType === "month" && (
                   <select
-                    value={selectedFilterValue}
-                    onChange={(e) => setSelectedFilterValue(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition sm:col-span-2 md:col-span-1"
+                    value={filterType}
+                    onChange={(e) => {
+                      setFilterType(e.target.value);
+                      setSelectedFilterValue("");
+                      setCurrentPage(1);
+                    }}
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition"
                   >
-                    <option value="">Selecciona el mes...</option>
-                    {availableMonths.map(m => (
-                      <option key={m} value={m}>Mes: {m}</option>
-                    ))}
+                    <option value="all">⚡ Todos los registros</option>
+                    <option value="month">📅 Filtrar por Mes</option>
+                    <option value="week">📆 Filtrar por Semana</option>
                   </select>
-                )}
 
-                {filterType === "week" && (
-                  <select
-                    value={selectedFilterValue}
-                    onChange={(e) => setSelectedFilterValue(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition sm:col-span-2 md:col-span-1"
-                  >
-                    <option value="">Selecciona la semana...</option>
-                    {availableWeeks.map(w => (
-                      <option key={w} value={w}>Semana: {w}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              {loading ? (
-                <p className="text-center text-slate-500 py-8 text-sm">Cargando registros...</p>
-              ) : filteredRecords.length === 0 ? (
-                <p className="text-center text-slate-500 py-8 text-sm">No se encontraron registros.</p>
-              ) : (
-                <div className="overflow-x-auto flex-1">
-                  <table className="w-full text-left border-collapse min-w-[650px]">
-                    <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
-                        <th className="pb-3 px-3">Trabajador</th>
-                        <th className="pb-3 px-3">Fecha</th>
-                        <th className="pb-3 px-3">Horario</th>
-                        <th className="pb-3 px-3">Horas</th>
-                        <th className="pb-3 px-3">Centro Costo</th>
-                        <th className="pb-3 px-3">Descripción</th>
-                        {!isReadOnly && <th className="pb-3 px-3 text-right print:hidden">Acciones</th>}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
-                      {filteredRecords.map((rec) => (
-                        <tr key={rec.id} className="hover:bg-slate-800/40 transition">
-                          <td className="py-3 px-3 font-semibold text-white">{rec.worker_name || rec.trabajador}</td>
-                          <td className="py-3 px-3 text-slate-300">{rec.work_date || rec.fecha}</td>
-                          <td className="py-3 px-3 text-slate-400 text-xs">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
-                          <td className="py-3 px-3 font-bold text-emerald-400">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs</td>
-                          <td className="py-3 px-3 text-slate-400 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
-                          <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">{rec.description || rec.descripcion || "-"}</td>
-                          {!isReadOnly && (
-                            <td className="py-3 px-3 text-right space-x-2 print:hidden whitespace-nowrap">
-                              <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">Editar</button>
-                              <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">Borrar</button>
-                            </td>
-                          )}
-                        </tr>
+                  {filterType === "month" && (
+                    <select
+                      value={selectedFilterValue}
+                      onChange={(e) => {
+                        setSelectedFilterValue(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition sm:col-span-2 md:col-span-1"
+                    >
+                      <option value="">Selecciona el mes...</option>
+                      {availableMonths.map(m => (
+                        <option key={m} value={m}>Mes: {m}</option>
                       ))}
-                    </tbody>
-                  </table>
+                    </select>
+                  )}
+
+                  {filterType === "week" && (
+                    <select
+                      value={selectedFilterValue}
+                      onChange={(e) => {
+                        setSelectedFilterValue(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs sm:text-sm focus:outline-none focus:border-indigo-500 transition sm:col-span-2 md:col-span-1"
+                    >
+                      <option value="">Selecciona la semana...</option>
+                      {availableWeeks.map(w => (
+                        <option key={w} value={w}>Semana: {w}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {loading ? (
+                  <p className="text-center text-slate-500 py-8 text-sm">Cargando registros...</p>
+                ) : filteredRecords.length === 0 ? (
+                  <p className="text-center text-slate-500 py-8 text-sm">No se encontraron registros.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[650px]">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
+                          <th className="pb-3 px-3">Trabajador</th>
+                          <th className="pb-3 px-3">Fecha</th>
+                          <th className="pb-3 px-3">Horario</th>
+                          <th className="pb-3 px-3">Horas</th>
+                          <th className="pb-3 px-3">Centro Costo</th>
+                          <th className="pb-3 px-3">Descripción</th>
+                          {!isReadOnly && <th className="pb-3 px-3 text-right print:hidden">Acciones</th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                        {currentRecords.map((rec) => (
+                          <tr key={rec.id} className="hover:bg-slate-800/40 transition">
+                            <td className="py-3 px-3 font-semibold text-white">{rec.worker_name || rec.trabajador}</td>
+                            <td className="py-3 px-3 text-slate-300">{rec.work_date || rec.fecha}</td>
+                            <td className="py-3 px-3 text-slate-400 text-xs">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
+                            <td className="py-3 px-3 font-bold text-emerald-400">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs</td>
+                            <td className="py-3 px-3 text-slate-400 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
+                            <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">{rec.description || rec.descripcion || "-"}</td>
+                            {!isReadOnly && (
+                              <td className="py-3 px-3 text-right space-x-2 print:hidden whitespace-nowrap">
+                                <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">Editar</button>
+                                <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">Borrar</button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Controles de Paginación Estilizados */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-4 print:hidden">
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  >
+                    ← Anterior
+                  </button>
+                  <span className="text-xs text-slate-400 font-medium">
+                    Página <strong className="text-white">{currentPage}</strong> de <strong className="text-white">{totalPages}</strong>
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  >
+                    Siguiente →
+                  </button>
                 </div>
               )}
             </div>
