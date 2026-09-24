@@ -1,11 +1,31 @@
 import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
 import { 
+  Chart as ChartJS, 
+  CategoryScale, 
+  LinearScale, 
+  BarElement, 
+  Title, 
+  Tooltip, 
+  Legend 
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+import { 
   fetchRecords, 
   createRecord, 
   updateRecord, 
   deleteRecord 
 } from "./api";
+
+// Registramos los componentes necesarios de Chart.js
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
@@ -21,7 +41,6 @@ export default function App() {
   const [usersList, setUsersList] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  // Nuevos estados para filtros avanzados
   const [selectedWorkerFilter, setSelectedWorkerFilter] = useState("all");
   const [filterType, setFilterType] = useState("all");
   const [selectedFilterValue, setSelectedFilterValue] = useState("");
@@ -262,20 +281,16 @@ export default function App() {
     return `${formatDate(monday)} al ${formatDate(sunday)}`;
   };
 
-  // Obtener lista única de nombres de trabajadores registrados
   const uniqueWorkers = Array.from(new Set(records.map(r => r.worker_name || r.trabajador))).filter(Boolean).sort();
 
-  // Filtrado de registros en cascada (Trabajador -> Tipo de Periodo -> Mes/Semana)
   const filteredRecords = records.filter((rec) => {
     const worker = (rec.worker_name || rec.trabajador || "");
     const date = (rec.work_date || rec.fecha || "");
 
-    // 1. Filtro por Trabajador seleccionado
     if (selectedWorkerFilter !== "all" && worker !== selectedWorkerFilter) {
       return false;
     }
 
-    // 2. Filtro por Mes o Semana específicos
     if (filterType === "month" && selectedFilterValue) {
       return date.startsWith(selectedFilterValue);
     }
@@ -285,12 +300,10 @@ export default function App() {
     return true;
   });
 
-  // Opciones de meses y semanas disponibles según el trabajador seleccionado
   const recordsForWorker = selectedWorkerFilter === "all" ? records : records.filter(r => (r.worker_name || r.trabajador) === selectedWorkerFilter);
   const availableMonthsForWorker = Array.from(new Set(recordsForWorker.map(r => (r.work_date || r.fecha || "").substring(0, 7)))).filter(Boolean).sort().reverse();
   const availableWeeksForWorker = Array.from(new Set(recordsForWorker.map(r => getWeekNumber(r.work_date || r.fecha || "")))).filter(Boolean).sort().reverse();
 
-  // Paginación (7 elementos por página)
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage) || 1;
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -453,6 +466,46 @@ export default function App() {
   });
 
   const totalHorasStats = recordsForStats.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
+
+  // Configuración de datos para el Gráfico de Estadísticas
+  // Agrupamos las horas por trabajador en el mes seleccionado
+  const workersForChart = Array.from(new Set(recordsForStats.map(r => r.worker_name || r.trabajador))).filter(Boolean);
+  const hoursPerWorker = workersForChart.map(w => {
+    return recordsForStats
+      .filter(r => (r.worker_name || r.trabajador) === w)
+      .reduce((sum, curr) => sum + (Number(curr.calculated_hours || curr.horas) || 0), 0);
+  });
+
+  const chartData = {
+    labels: workersForChart,
+    datasets: [
+      {
+        label: 'Horas Trabajadas',
+        data: hoursPerWorker,
+        backgroundColor: 'rgba(99, 102, 241, 0.7)', // Color Indigo moderno
+        borderColor: 'rgba(99, 102, 241, 1)',
+        borderWidth: 2,
+        borderRadius: 8,
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: { color: '#cbd5e1', font: { family: 'sans-serif' } }
+      },
+      title: {
+        display: false,
+      },
+    },
+    scales: {
+      x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+      y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
@@ -627,7 +680,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Filtros avanzados en cascada */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 print:hidden">
                   <select
                     value={selectedWorkerFilter}
@@ -732,7 +784,6 @@ export default function App() {
                 )}
               </div>
 
-              {/* Controles de Paginación */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-4 print:hidden">
                   <button
@@ -893,6 +944,18 @@ export default function App() {
                   <h3 className="text-3xl sm:text-4xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
                 </div>
                 <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-xl sm:text-2xl">📊</div>
+              </div>
+            </div>
+
+            {/* SECCIÓN DEL GRÁFICO ESTADÍSTICO */}
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+              <h3 className="text-white font-bold text-base mb-4">📈 Horas Acumuladas por Trabajador</h3>
+              <div className="w-full h-72 sm:h-80 flex items-center justify-center">
+                {workersForChart.length === 0 ? (
+                  <p className="text-slate-500 text-sm">No hay datos suficientes para mostrar el gráfico en este periodo.</p>
+                ) : (
+                  <Bar data={chartData} options={chartOptions} />
+                )}
               </div>
             </div>
           </div>
