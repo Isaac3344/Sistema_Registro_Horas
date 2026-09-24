@@ -17,6 +17,7 @@ class Record(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
+    # Nombres de campos en inglés
     worker_name = Column(String, nullable=True)
     work_date = Column(String, nullable=True)
     entry_time = Column(String, nullable=True)
@@ -25,6 +26,7 @@ class Record(Base):
     cost_center = Column(String, nullable=True)
     description = Column(String, nullable=True)
 
+    # Nombres de campos en español (compatibilidad con esquema antiguo)
     trabajador = Column(String, nullable=True)
     fecha = Column(String, nullable=True)
     hora_entrada = Column(String, nullable=True)
@@ -33,6 +35,7 @@ class Record(Base):
     centro_costo = Column(String, nullable=True)
     descripcion = Column(String, nullable=True)
 
-    user_id = Column(Integer, nullable=True)
+    # Clave foránea indispensable para asociar a la tabla users
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     owner = relationship("User", back_populates="records")
