@@ -19,7 +19,7 @@ export default function App() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("all"); // Filtro de mes para estadísticas
+  const [selectedMonth, setSelectedMonth] = useState("all");
 
   const [workerName, setWorkerName] = useState("");
   const [workDate, setWorkDate] = useState(new Date().toISOString().split("T")[0]);
@@ -138,19 +138,52 @@ export default function App() {
     const name = (rec.worker_name || rec.trabajador || "").toLowerCase();
     const center = (rec.cost_center || rec.centro_costo || "").toLowerCase();
     const date = (rec.work_date || rec.fecha || "").toLowerCase();
+    const desc = (rec.description || rec.descripcion || "").toLowerCase();
     const term = searchTerm.toLowerCase();
-    return name.includes(term) || center.includes(term) || date.includes(term);
+    return name.includes(term) || center.includes(term) || date.includes(term) || desc.includes(term);
   });
 
-  const handleImport = () => alert("Función de importar lista.");
-  const handleExportExcel = () => alert("Función de exportar a Excel lista.");
-  const handleExportPDF = () => alert("Función de exportar PDF lista.");
+  // Exportar a Excel (CSV compatible con Excel)
+  const handleExportExcel = () => {
+    if (records.length === 0) {
+      alert("No hay registros para exportar.");
+      return;
+    }
+    let csvContent = "data:text/csv;charset=utf-8,Trabajador,Fecha,Entrada,Salida,Horas,Centro de Costo,Descripcion\n";
+    records.forEach((r) => {
+      const row = [
+        `"${r.worker_name || r.trabajador || ""}"`,
+        `"${r.work_date || r.fecha || ""}"`,
+        `"${r.entry_time || r.hora_entrada || ""}"`,
+        `"${r.exit_time || r.hora_salida || ""}"`,
+        r.calculated_hours || r.horas || 0,
+        `"${r.cost_center || r.centro_costo || ""}"`,
+        `"${(r.description || r.descripcion || "").replace(/"/g, '""')}"`
+      ].join(",");
+      csvContent += row + "\n";
+    });
 
-  // ================= LOGIN ANIMADO =================
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "reporte_jornadas.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Exportar a PDF (Abre la ventana de impresión nativa optimizada para PDF)
+  const handleExportPDF = () => {
+    window.print();
+  };
+
+  const handleImport = () => {
+    alert("Para importar masivamente, puedes utilizar tu plantilla de Excel conectada a la base de datos.");
+  };
+
   if (!token) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Círculos animados luminosos de fondo */}
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
 
@@ -217,14 +250,11 @@ export default function App() {
     );
   }
 
-  // ================= ESTADÍSTICAS CON FILTRO POR MES =================
-  // Obtener meses únicos de los registros para el selector
   const availableMonths = Array.from(new Set(records.map(r => {
     const d = r.work_date || r.fecha;
-    return d ? d.substring(0, 7) : ""; // Formato "YYYY-MM"
+    return d ? d.substring(0, 7) : "";
   }))).filter(Boolean).sort().reverse();
 
-  // Filtrar registros según mes seleccionado
   const recordsForStats = records.filter(r => {
     if (selectedMonth === "all") return true;
     const d = r.work_date || r.fecha;
@@ -249,7 +279,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between print:hidden">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
             AR
@@ -290,7 +320,7 @@ export default function App() {
       <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
         {currentTab === "gestion" ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit print:hidden">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-bold text-white text-base">
                   {editingId ? "✏️ Editar Registro" : "➕ Nuevo Registro"}
@@ -394,7 +424,7 @@ export default function App() {
             </div>
 
             <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 print:hidden">
                 <div>
                   <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
                   <p className="text-xs text-slate-400">Consulta, filtra y gestiona tus jornadas laborales</p>
@@ -413,12 +443,12 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="mb-4">
+              <div className="mb-4 print:hidden">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="🔍 Buscar por trabajador, centro de costo o fecha..."
+                  placeholder="🔍 Buscar por trabajador, centro de costo, descripción o fecha..."
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
                 />
               </div>
@@ -437,7 +467,8 @@ export default function App() {
                         <th className="pb-3 px-3">Horario</th>
                         <th className="pb-3 px-3">Horas</th>
                         <th className="pb-3 px-3">Centro Costo</th>
-                        <th className="pb-3 px-3 text-right">Acciones</th>
+                        <th className="pb-3 px-3">Descripción</th>
+                        <th className="pb-3 px-3 text-right print:hidden">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 text-sm">
@@ -456,7 +487,10 @@ export default function App() {
                           <td className="py-3 px-3 text-slate-400 text-xs">
                             {rec.cost_center || rec.centro_costo || "-"}
                           </td>
-                          <td className="py-3 px-3 text-right space-x-2">
+                          <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">
+                            {rec.description || rec.descripcion || "-"}
+                          </td>
+                          <td className="py-3 px-3 text-right space-x-2 print:hidden">
                             <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">
                               Editar
                             </button>
@@ -473,9 +507,7 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* ================= ESTADÍSTICAS CON FILTRO DE MES ================= */
           <div className="space-y-6 max-w-5xl mx-auto">
-            {/* Barra de Filtro por Mes */}
             <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center justify-between">
               <div>
                 <h3 className="text-white font-bold text-base">Filtrar Estadísticas</h3>
