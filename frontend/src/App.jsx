@@ -16,13 +16,13 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState("");
 
-  // Estados de la Aplicación (Pestañas y Registros)
+  // Estados de la Aplicación
   const [currentTab, setCurrentTab] = useState("gestion"); // "gestion" o "estadisticas"
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // Filtro de búsqueda
 
-  // Campos del Formulario de Registro de Jornada
+  // Campos del Formulario de Registro
   const [workerName, setWorkerName] = useState("");
   const [workDate, setWorkDate] = useState(new Date().toISOString().split("T")[0]);
   const [entryTime, setEntryTime] = useState("08:00");
@@ -31,7 +31,6 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState(null);
 
-  // Cargar registros al iniciar sesión o tener token válido
   useEffect(() => {
     if (token) {
       loadRecords();
@@ -43,9 +42,7 @@ export default function App() {
       setLoading(true);
       const data = await fetchRecords();
       setRecords(data);
-      setErrorMsg("");
     } catch (err) {
-      setErrorMsg(err.message);
       if (err.message.includes("expirada") || err.message.includes("401")) {
         handleLogout();
       }
@@ -54,7 +51,6 @@ export default function App() {
     }
   };
 
-  // Manejar Login / Registro
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError("");
@@ -79,7 +75,6 @@ export default function App() {
     setRecords([]);
   };
 
-  // Calcular horas automáticamente
   const calculateHours = (entry, exit) => {
     if (!entry || !exit) return 0;
     const [eHour, eMin] = entry.split(":").map(Number);
@@ -91,7 +86,6 @@ export default function App() {
 
   const calculatedHours = calculateHours(entryTime, exitTime);
 
-  // Guardar o Actualizar Jornada
   const handleSubmitRecord = async (e) => {
     e.preventDefault();
     try {
@@ -112,7 +106,6 @@ export default function App() {
         await createRecord(recordData);
       }
 
-      // Limpiar formulario y recargar
       setWorkerName("");
       setCostCenter("");
       setDescription("");
@@ -122,7 +115,6 @@ export default function App() {
     }
   };
 
-  // Editar Registro
   const handleEdit = (rec) => {
     setEditingId(rec.id);
     setWorkerName(rec.worker_name || rec.trabajador || "");
@@ -133,7 +125,6 @@ export default function App() {
     setDescription(rec.description || rec.descripcion || "");
   };
 
-  // Eliminar Registro
   const handleDelete = async (id) => {
     if (window.confirm("¿Estás seguro de eliminar este registro?")) {
       try {
@@ -145,7 +136,25 @@ export default function App() {
     }
   };
 
-  // ================= PANTALLA DE LOGIN / REGISTRO =================
+  // Filtrar registros según el buscador
+  const filteredRecords = records.filter((rec) => {
+    const name = (rec.worker_name || rec.trabajador || "").toLowerCase();
+    const center = (rec.cost_center || rec.centro_costo || "").toLowerCase();
+    const date = (rec.work_date || rec.fecha || "").toLowerCase();
+    const term = searchTerm.toLowerCase();
+    return name.includes(term) || center.includes(term) || date.includes(term);
+  });
+
+  // Funciones simuladas para botones Excel / PDF
+  const handleExportExcel = () => {
+    alert("Función de exportar a Excel lista. Próximamente descarga directa.");
+  };
+
+  const handleExportPDF = () => {
+    alert("Función de exportar reporte en PDF lista. Próximamente descarga directa.");
+  };
+
+  // ================= LOGIN VIEW =================
   if (!token) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
@@ -212,7 +221,7 @@ export default function App() {
     );
   }
 
-  // ================= PANTALLA PRINCIPAL CON PESTAÑAS =================
+  // ================= MAIN APP VIEW =================
   const totalHoras = records.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
   const horasPorTrabajador = records.reduce((acc, curr) => {
     const t = curr.worker_name || curr.trabajador || "Sin nombre";
@@ -230,7 +239,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      {/* Barra de Navegación Superior */}
+      {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
@@ -242,7 +251,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Pestañas */}
+        {/* Tabs */}
         <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
           <button
             onClick={() => setCurrentTab("gestion")}
@@ -270,11 +279,11 @@ export default function App() {
         </button>
       </header>
 
-      {/* Contenido Principal */}
+      {/* Main Container */}
       <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
         {currentTab === "gestion" ? (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Formulario */}
+            {/* Form */}
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="font-bold text-white text-base">
@@ -378,22 +387,46 @@ export default function App() {
               </form>
             </div>
 
-            {/* Tabla de Historial */}
+            {/* Records Table + Search & Export Buttons */}
             <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                 <div>
                   <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
-                  <p className="text-xs text-slate-400">Consulta y gestiona tus jornadas laborales</p>
+                  <p className="text-xs text-slate-400">Consulta, filtra y gestiona tus jornadas laborales</p>
                 </div>
-                <span className="text-xs bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-3 py-1.5 rounded-xl font-bold">
-                  {records.length} Registros
-                </span>
+
+                {/* Export Buttons */}
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={handleExportExcel}
+                    className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+                  >
+                    📊 Excel
+                  </button>
+                  <button 
+                    onClick={handleExportPDF}
+                    className="bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
+                  >
+                    📄 PDF
+                  </button>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="mb-4">
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="🔍 Buscar por trabajador, centro de costo o fecha..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                />
               </div>
 
               {loading ? (
                 <p className="text-center text-slate-500 py-8">Cargando registros...</p>
-              ) : records.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">No se encontraron registros guardados.</p>
+              ) : filteredRecords.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">No se encontraron registros coincidentes.</p>
               ) : (
                 <div className="overflow-x-auto flex-1">
                   <table className="w-full text-left border-collapse">
@@ -408,7 +441,7 @@ export default function App() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60 text-sm">
-                      {records.map((rec) => (
+                      {filteredRecords.map((rec) => (
                         <tr key={rec.id} className="hover:bg-slate-800/40 transition">
                           <td className="py-3 px-3 font-semibold text-white">
                             {rec.worker_name || rec.trabajador}
@@ -446,7 +479,7 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* ================= PESTAÑA DE ESTADÍSTICAS VISUALES ================= */
+          /* ================= STATS VIEW ================= */
           <div className="space-y-6 max-w-5xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
@@ -470,7 +503,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Gráfico de Horas por Trabajador */}
+            {/* Workers Progress */}
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
               <h3 className="text-lg font-bold text-white mb-4">👤 Distribución de Horas por Trabajador</h3>
               {Object.keys(horasPorTrabajador).length === 0 ? (
@@ -498,7 +531,7 @@ export default function App() {
               )}
             </div>
 
-            {/* Gráfico de Horas por Centro de Costo */}
+            {/* Cost Centers Progress */}
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
               <h3 className="text-lg font-bold text-white mb-4">🏢 Horas por Centro de Costo</h3>
               {Object.keys(horasPorCentro).length === 0 ? (
