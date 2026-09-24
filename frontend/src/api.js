@@ -1,78 +1,91 @@
 const API_URL = "https://backend-registro-horas.onrender.com";
 
-// Función maestra para obtener la cabecera de seguridad JWT
-const getAuthHeaders = () => {
+// Función auxiliar para manejar las peticiones HTTP
+async function handleResponse(response) {
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.detail || "Error en la petición del servidor");
+  }
+  return data;
+}
+
+// Registro general o de empleados
+export async function registerUser(userData) {
+  // Soporta tanto si se pasa un objeto (nuevo) como texto directo (antiguo)
+  const payload = typeof userData === "object" ? userData : { username: userData.username, password: userData.password, role: "admin" };
+  
+  const response = await fetch(`${API_URL}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(response);
+}
+
+// Inicio de sesión
+export async function loginUser(username, password) {
+  const response = await fetch(`${API_URL}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await handleResponse(response);
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+  }
+  return data;
+}
+
+// Obtener registros de jornadas
+export async function fetchRecords() {
   const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}` // Aquí inyectamos el Token secreto
-  };
-};
+  const response = await fetch(`${API_URL}/records`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+  });
+  return handleResponse(response);
+}
 
-export const registerUser = async (username, password) => {
-  const res = await fetch(`${API_URL}/register`, {
+// Crear registro
+export async function createRecord(recordData) {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${API_URL}/records`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(recordData),
   });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || "Error al registrar usuario");
-  }
-  const data = await res.json();
-  localStorage.setItem("token", data.token); // Guardamos el token
-  return data;
-};
+  return handleResponse(response);
+}
 
-export const loginUser = async (username, password) => {
-  const res = await fetch(`${API_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.detail || "Error al iniciar sesión");
-  }
-  const data = await res.json();
-  localStorage.setItem("token", data.token); // Guardamos el token
-  return data;
-};
-
-// Las demás peticiones ya no usan el ID en la URL, usan getAuthHeaders()
-export const fetchRecords = async () => {
-  const res = await fetch(`${API_URL}/records`, {
-    headers: getAuthHeaders()
-  });
-  if (!res.ok) throw new Error("Sesión expirada o inválida. Vuelve a iniciar sesión.");
-  return await res.json();
-};
-
-export const createRecord = async (data) => {
-  const res = await fetch(`${API_URL}/records`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Error al crear registro");
-  return await res.json();
-};
-
-export const updateRecord = async (id, data) => {
-  const res = await fetch(`${API_URL}/records/${id}`, {
+// Actualizar registro
+export async function updateRecord(recordId, recordData) {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${API_URL}/records/${recordId}`, {
     method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(recordData),
   });
-  if (!res.ok) throw new Error("Error al actualizar registro");
-  return await res.json();
-};
+  return handleResponse(response);
+}
 
-export const deleteRecord = async (id) => {
-  const res = await fetch(`${API_URL}/records/${id}`, {
+// Eliminar registro
+export async function deleteRecord(recordId) {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${API_URL}/records/${recordId}`, {
     method: "DELETE",
-    headers: getAuthHeaders()
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
   });
-  if (!res.ok) throw new Error("Error al eliminar registro");
-  return await res.json();
-};
+  return handleResponse(response);
+}
