@@ -75,143 +75,139 @@ export default function RegistroForm({ onSubmit, editingRecord, onCancelEdit }) 
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl text-slate-100 w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+    <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-2xl text-slate-100 w-full">
+      {/* Cabecera del Formulario */}
+      <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800/80">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-            {editingRecord ? 'Editar Registro de Jornada' : 'Nuevo Registro de Jornada'}
+            {editingRecord ? 'Editar Registro' : 'Nuevo Registro de Jornada'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">Completa la información de la jornada para ingresarla a la base de datos.</p>
+          <p className="text-xs text-slate-400 mt-1">Completa la información de la jornada laboral.</p>
         </div>
-        <div className="bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-xl text-emerald-400 font-bold text-sm flex items-center gap-2 self-start sm:self-auto">
-          <span>HORAS CALCULADAS:</span>
-          <span className="text-base font-extrabold">{calculatedHours.toFixed(2)} hrs</span>
+        <div className="bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-400 font-bold text-xs flex flex-col items-end whitespace-nowrap">
+          <span className="text-[10px] text-emerald-500 uppercase tracking-wider">Horas</span>
+          <span className="text-sm font-extrabold">{calculatedHours.toFixed(2)} hrs</span>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Dos Columnas Anchas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Seccion 1: Trabajador y Horario */}
-          <div className="space-y-4 bg-slate-950/40 p-5 rounded-xl border border-slate-800/80">
-            <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-              1. TRABAJADOR Y JORNADA
-            </h3>
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Sección 1: Trabajador y Jornada */}
+        <div className="space-y-3.5">
+          <h3 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+            1. Trabajador y Jornada
+          </h3>
 
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Nombre del Trabajador *</label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <input
+                type="text"
+                name="worker_name"
+                required
+                value={formData.worker_name}
+                onChange={handleChange}
+                placeholder="Ej. Juan Pérez"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Fecha de Trabajo</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <input
+                type="date"
+                name="work_date"
+                required
+                value={formData.work_date}
+                onChange={handleChange}
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500/50 [color-scheme:dark]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Nombre del Trabajador *</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Hora Entrada</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
                 <input
-                  type="text"
-                  name="worker_name"
+                  type="time"
+                  name="entry_time"
                   required
-                  value={formData.worker_name}
+                  value={formData.entry_time}
                   onChange={handleChange}
-                  placeholder="Ej: Juan Pérez"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50"
+                  className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-8 pr-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500/50 [color-scheme:dark]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">Fecha de Trabajo</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1">Hora Salida</label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                <Clock className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
                 <input
-                  type="date"
-                  name="work_date"
+                  type="time"
+                  name="exit_time"
                   required
-                  value={formData.work_date}
+                  value={formData.exit_time}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-emerald-500/50 [color-scheme:dark]"
+                  className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-8 pr-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500/50 [color-scheme:dark]"
                 />
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Hora Entrada</label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                  <input
-                    type="time"
-                    name="entry_time"
-                    required
-                    value={formData.entry_time}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-2 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500/50 [color-scheme:dark]"
-                  />
-                </div>
-              </div>
+        <hr className="border-slate-800/80" />
 
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Hora Salida</label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                  <input
-                    type="time"
-                    name="exit_time"
-                    required
-                    value={formData.exit_time}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-2 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500/50 [color-scheme:dark]"
-                  />
-                </div>
-              </div>
+        {/* Sección 2: Centro de Costo y Detalles */}
+        <div className="space-y-3.5">
+          <h3 className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">
+            2. Centro de Costo y Detalles
+          </h3>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Centro de Costo</label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+              <input
+                type="text"
+                name="cost_center"
+                value={formData.cost_center}
+                onChange={handleChange}
+                placeholder="Ej. Operaciones, Red, Soporte"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
             </div>
           </div>
 
-          {/* Seccion 2: Centro de costo y Detalles */}
-          <div className="space-y-4 bg-slate-950/40 p-5 rounded-xl border border-slate-800/80 flex flex-col justify-between">
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                2. CENTRO DE COSTO Y DETALLES
-              </h3>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Centro de Costo</label>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                  <input
-                    type="text"
-                    name="cost_center"
-                    value={formData.cost_center}
-                    onChange={handleChange}
-                    placeholder="Ej: Operaciones, Red, Soporte"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1.5">Descripción de Tareas</label>
-                <div className="relative">
-                  <FileText className="absolute left-3 top-3 text-slate-500" size={18} />
-                  <textarea
-                    name="description"
-                    rows="3"
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder="Detalle del trabajo realizado, novedades..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 resize-none"
-                  ></textarea>
-                </div>
-              </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-400 mb-1">Descripción de Tareas</label>
+            <div className="relative">
+              <FileText className="absolute left-3 top-3 text-slate-500" size={16} />
+              <textarea
+                name="description"
+                rows="3"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Detalle del trabajo realizado, novedades..."
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-9 pr-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-emerald-500/50 resize-none transition-colors"
+              ></textarea>
             </div>
           </div>
-
         </div>
 
         {/* Botonera */}
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="pt-2 flex gap-2">
           {editingRecord && (
             <button
               type="button"
               onClick={onCancelEdit}
-              className="px-6 py-3 rounded-xl text-sm font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
+              className="w-1/3 py-2.5 rounded-xl text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
             >
               Cancelar
             </button>
@@ -219,9 +215,9 @@ export default function RegistroForm({ onSubmit, editingRecord, onCancelEdit }) 
           <button
             type="submit"
             disabled={loading}
-            className="px-8 py-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-lg shadow-emerald-600/20 disabled:opacity-50 flex items-center gap-2"
+            className="w-full py-3 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {editingRecord ? <CheckCircle size={18} /> : <PlusCircle size={18} />}
+            {editingRecord ? <CheckCircle size={16} /> : <PlusCircle size={16} />}
             <span>{loading ? 'Guardando...' : editingRecord ? 'Actualizar Registro' : 'Guardar Registro'}</span>
           </button>
         </div>
