@@ -19,6 +19,7 @@ export default function App() {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("all"); // Filtro de mes para estadísticas
 
   const [workerName, setWorkerName] = useState("");
   const [workDate, setWorkDate] = useState(new Date().toISOString().split("T")[0]);
@@ -141,30 +142,27 @@ export default function App() {
     return name.includes(term) || center.includes(term) || date.includes(term);
   });
 
-  const handleImport = () => {
-    alert("Función de importar registros lista.");
-  };
+  const handleImport = () => alert("Función de importar lista.");
+  const handleExportExcel = () => alert("Función de exportar a Excel lista.");
+  const handleExportPDF = () => alert("Función de exportar PDF lista.");
 
-  const handleExportExcel = () => {
-    alert("Función de exportar a Excel lista.");
-  };
-
-  const handleExportPDF = () => {
-    alert("Función de exportar reporte en PDF lista.");
-  };
-
+  // ================= LOGIN ANIMADO =================
   if (!token) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Círculos animados luminosos de fondo */}
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
+
+        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
           <div className="text-center mb-8">
-            <div className="inline-flex p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-indigo-400 text-2xl mb-3">
-              🔒
+            <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-3 shadow-inner">
+              ⚡
             </div>
-            <h1 className="text-2xl font-bold text-white">
-              {isLoginView ? "Iniciar Sesión" : "Crear Cuenta"}
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">
+              {isLoginView ? "Bienvenido de nuevo" : "Crea tu Cuenta"}
             </h1>
-            <p className="text-slate-400 text-sm mt-1">Control de Jornadas y Costos</p>
+            <p className="text-slate-400 text-sm mt-1">Plataforma Profesional de Horas</p>
           </div>
 
           {authError && (
@@ -181,7 +179,7 @@ export default function App() {
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
                 placeholder="Ingresa tu usuario"
               />
             </div>
@@ -193,14 +191,14 @@ export default function App() {
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
                 placeholder="••••••••"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/20 transition duration-200"
+              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200"
             >
               {isLoginView ? "Entrar al Sistema" : "Registrarse"}
             </button>
@@ -219,15 +217,30 @@ export default function App() {
     );
   }
 
-  const totalHoras = records.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
-  const horasPorTrabajador = records.reduce((acc, curr) => {
+  // ================= ESTADÍSTICAS CON FILTRO POR MES =================
+  // Obtener meses únicos de los registros para el selector
+  const availableMonths = Array.from(new Set(records.map(r => {
+    const d = r.work_date || r.fecha;
+    return d ? d.substring(0, 7) : ""; // Formato "YYYY-MM"
+  }))).filter(Boolean).sort().reverse();
+
+  // Filtrar registros según mes seleccionado
+  const recordsForStats = records.filter(r => {
+    if (selectedMonth === "all") return true;
+    const d = r.work_date || r.fecha;
+    return d && d.startsWith(selectedMonth);
+  });
+
+  const totalHoras = recordsForStats.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
+  
+  const horasPorTrabajador = recordsForStats.reduce((acc, curr) => {
     const t = curr.worker_name || curr.trabajador || "Sin nombre";
     const h = Number(curr.calculated_hours || curr.horas) || 0;
     acc[t] = (acc[t] || 0) + h;
     return acc;
   }, {});
 
-  const horasPorCentro = records.reduce((acc, curr) => {
+  const horasPorCentro = recordsForStats.reduce((acc, curr) => {
     const c = curr.cost_center || curr.centro_costo || "General";
     const h = Number(curr.calculated_hours || curr.horas) || 0;
     acc[c] = (acc[c] || 0) + h;
@@ -388,22 +401,13 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button 
-                    onClick={handleImport}
-                    className="bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
-                  >
+                  <button onClick={handleImport} className="bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
                     📥 Importar
                   </button>
-                  <button 
-                    onClick={handleExportExcel}
-                    className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
-                  >
+                  <button onClick={handleExportExcel} className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
                     📊 Excel
                   </button>
-                  <button 
-                    onClick={handleExportPDF}
-                    className="bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5"
-                  >
+                  <button onClick={handleExportPDF} className="bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
                     📄 PDF
                   </button>
                 </div>
@@ -453,16 +457,10 @@ export default function App() {
                             {rec.cost_center || rec.centro_costo || "-"}
                           </td>
                           <td className="py-3 px-3 text-right space-x-2">
-                            <button
-                              onClick={() => handleEdit(rec)}
-                              className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg"
-                            >
+                            <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">
                               Editar
                             </button>
-                            <button
-                              onClick={() => handleDelete(rec.id)}
-                              className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg"
-                            >
+                            <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">
                               Borrar
                             </button>
                           </td>
@@ -475,11 +473,30 @@ export default function App() {
             </div>
           </div>
         ) : (
+          /* ================= ESTADÍSTICAS CON FILTRO DE MES ================= */
           <div className="space-y-6 max-w-5xl mx-auto">
+            {/* Barra de Filtro por Mes */}
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center justify-between">
+              <div>
+                <h3 className="text-white font-bold text-base">Filtrar Estadísticas</h3>
+                <p className="text-xs text-slate-400">Selecciona un mes específico o visualiza todo el histórico</p>
+              </div>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+              >
+                <option value="all">📅 Todos los meses (Histórico)</option>
+                {availableMonths.map((m) => (
+                  <option key={m} value={m}>Mes: {m}</option>
+                ))}
+              </select>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Total de Horas Registradas</p>
+                  <p className="text-slate-400 text-sm font-medium">Horas del Periodo</p>
                   <h3 className="text-4xl font-extrabold text-emerald-400 mt-1">{totalHoras.toFixed(1)} hrs</h3>
                 </div>
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-2xl">
@@ -489,8 +506,8 @@ export default function App() {
 
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Jornadas Guardadas</p>
-                  <h3 className="text-4xl font-extrabold text-indigo-400 mt-1">{records.length}</h3>
+                  <p className="text-slate-400 text-sm font-medium">Jornadas en el Periodo</p>
+                  <h3 className="text-4xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
                 </div>
                 <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-2xl">
                   📊
@@ -501,7 +518,7 @@ export default function App() {
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
               <h3 className="text-lg font-bold text-white mb-4">👤 Distribución de Horas por Trabajador</h3>
               {Object.keys(horasPorTrabajador).length === 0 ? (
-                <p className="text-slate-500 text-sm py-4 text-center">No hay datos suficientes todavía.</p>
+                <p className="text-slate-500 text-sm py-4 text-center">No hay datos para este mes.</p>
               ) : (
                 <div className="space-y-4">
                   {Object.entries(horasPorTrabajador).map(([nombre, horas]) => {
@@ -513,10 +530,7 @@ export default function App() {
                           <span className="text-emerald-400 font-bold">{horas.toFixed(1)} hrs ({porcentaje.toFixed(0)}%)</span>
                         </div>
                         <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5">
-                          <div 
-                            className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" 
-                            style={{ width: `${porcentaje}%` }}
-                          ></div>
+                          <div className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-500" style={{ width: `${porcentaje}%` }}></div>
                         </div>
                       </div>
                     );
@@ -528,7 +542,7 @@ export default function App() {
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
               <h3 className="text-lg font-bold text-white mb-4">🏢 Horas por Centro de Costo</h3>
               {Object.keys(horasPorCentro).length === 0 ? (
-                <p className="text-slate-500 text-sm py-4 text-center">No hay datos suficientes todavía.</p>
+                <p className="text-slate-500 text-sm py-4 text-center">No hay datos para este mes.</p>
               ) : (
                 <div className="space-y-4">
                   {Object.entries(horasPorCentro).map(([centro, horas]) => {
@@ -540,10 +554,7 @@ export default function App() {
                           <span className="text-indigo-400 font-bold">{horas.toFixed(1)} hrs ({porcentaje.toFixed(0)}%)</span>
                         </div>
                         <div className="w-full bg-slate-800 h-3 rounded-full overflow-hidden p-0.5">
-                          <div 
-                            className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500" 
-                            style={{ width: `${porcentaje}%` }}
-                          ></div>
+                          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${porcentaje}%` }}></div>
                         </div>
                       </div>
                     );
