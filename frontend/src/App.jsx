@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import * as XLSX from "xlsx"; // Librería profesional para Excel
 import { 
   registerUser, 
   loginUser, 
@@ -143,36 +144,49 @@ export default function App() {
     return name.includes(term) || center.includes(term) || date.includes(term) || desc.includes(term);
   });
 
-  // Exportar a Excel (CSV compatible con Excel)
+  // Exportar a Excel con diseño profesional (.xlsx)
   const handleExportExcel = () => {
     if (records.length === 0) {
       alert("No hay registros para exportar.");
       return;
     }
-    let csvContent = "data:text/csv;charset=utf-8,Trabajador,Fecha,Entrada,Salida,Horas,Centro de Costo,Descripcion\n";
-    records.forEach((r) => {
-      const row = [
-        `"${r.worker_name || r.trabajador || ""}"`,
-        `"${r.work_date || r.fecha || ""}"`,
-        `"${r.entry_time || r.hora_entrada || ""}"`,
-        `"${r.exit_time || r.hora_salida || ""}"`,
-        r.calculated_hours || r.horas || 0,
-        `"${r.cost_center || r.centro_costo || ""}"`,
-        `"${(r.description || r.descripcion || "").replace(/"/g, '""')}"`
-      ].join(",");
-      csvContent += row + "\n";
-    });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "reporte_jornadas.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Mapear los datos con nombres limpios y profesionales para la hoja de cálculo
+    const dataToExport = records.map((r, index) => ({
+      "N°": index + 1,
+      "Trabajador": r.worker_name || r.trabajador || "",
+      "Fecha": r.work_date || r.fecha || "",
+      "Hora Entrada": r.entry_time || r.hora_entrada || "",
+      "Hora Salida": r.exit_time || r.hora_salida || "",
+      "Total Horas": Number(r.calculated_hours || r.horas || 0),
+      "Centro de Costo": r.cost_center || r.centro_costo || "General",
+      "Descripción de Tareas": r.description || r.descripcion || ""
+    }));
+
+    // Crear la hoja de trabajo (Worksheet)
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+
+    // Ajustar automáticamente el ancho de las columnas para que no se corten los textos
+    const colWidths = [
+      { wch: 5 },  // N°
+      { wch: 20 }, // Trabajador
+      { wch: 12 }, // Fecha
+      { wch: 12 }, // Entrada
+      { wch: 12 }, // Salida
+      { wch: 12 }, // Horas
+      { wch: 18 }, // Centro de Costo
+      { wch: 35 }, // Descripción
+    ];
+    worksheet["!cols"] = colWidths;
+
+    // Crear el libro de trabajo (Workbook) y añadir la hoja
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte de Jornadas");
+
+    // Descargar el archivo con formato Excel real
+    XLSX.writeFile(workbook, "Reporte_Jornadas_Profesional.xlsx");
   };
 
-  // Exportar a PDF (Abre la ventana de impresión nativa optimizada para PDF)
   const handleExportPDF = () => {
     window.print();
   };
