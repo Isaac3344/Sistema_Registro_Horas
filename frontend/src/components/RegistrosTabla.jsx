@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { 
   Trash2, Edit2, Search, Calendar, User, Clock, Building2, 
-  Download, Upload, FileSpreadsheet, FileText 
+  Upload, FileSpreadsheet, FileText 
 } from 'lucide-react';
 import ConfirmModal from './ConfirmModal';
 import { createRecord } from '../api';
@@ -31,96 +31,115 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
     }
   };
 
-  // 1. EXPORTAR A EXCEL (.CSV compatible)
+  // 1. EXPORTAR A EXCEL ESTILIZADO (.XLS)
   const handleExportExcel = () => {
     if (records.length === 0) {
       alert("No hay registros disponibles para exportar.");
       return;
     }
 
-    const headers = ["ID", "Trabajador", "Fecha", "Hora Entrada", "Hora Salida", "Horas", "Centro Costo", "Descripcion"];
-    const rows = records.map(r => [
-      r.id || '',
-      `"${r.worker_name || r.trabajador || ''}"`,
-      r.work_date || r.fecha || '',
-      r.entry_time || r.hora_entrada || '',
-      r.exit_time || r.hora_salida || '',
-      r.calculated_hours || r.horas || 0,
-      `"${r.cost_center || r.centro_costo || ''}"`,
-      `"${(r.description || r.descripcion || '').replace(/"/g, '""')}"`
-    ]);
+    const totalHours = records.reduce((acc, r) => acc + (parseFloat(r.calculated_hours || r.horas || 0)), 0);
 
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    let tableRows = '';
+    records.forEach((r) => {
+      const id = r.id || '-';
+      const name = r.worker_name || r.trabajador || 'N/A';
+      const date = r.work_date || r.fecha || 'N/A';
+      const time = (r.entry_time || '') + ' - ' + (r.exit_time || '');
+      const hours = parseFloat(r.calculated_hours || r.horas || 0).toFixed(2);
+      const cost = r.cost_center || r.centro_costo || '-';
+      const desc = r.description || r.descripcion || '-';
+
+      tableRows += '<tr>' +
+        '<td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">' + id + '</td>' +
+        '<td style="border:1px solid #cbd5e1; padding:6px;"><strong>' + name + '</strong></td>' +
+        '<td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">' + date + '</td>' +
+        '<td style="border:1px solid #cbd5e1; padding:6px; text-align:center;">' + time + '</td>' +
+        '<td style="border:1px solid #cbd5e1; padding:6px; text-align:right; font-weight:bold; color:#047857;">' + hours + ' hrs</td>' +
+        '<td style="border:1px solid #cbd5e1; padding:6px;">' + cost + '</td>' +
+        '<td style="border:1px solid #cbd5e1; padding:6px;">' + desc + '</td>' +
+      '</tr>';
+    });
+
+    const excelHTML = 
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+      '<head><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/></head>' +
+      '<body>' +
+        '<table style="font-family:Arial, sans-serif; font-size:12px;">' +
+          '<tr><td colspan="7" style="font-size:16px; font-weight:bold; color:#ffffff; background-color:#0f172a; padding:10px;">REPORTE DE REGISTRO DE HORAS Y JORNADAS LABORALES</td></tr>' +
+          '<tr><td colspan="7" style="font-size:11px; color:#64748b; padding:5px 0 10px 0;">Generado el: ' + new Date().toLocaleDateString() + ' | Total registros: ' + records.length + '</td></tr>' +
+          '<thead>' +
+            '<tr style="background-color:#1e293b; color:#10b981; font-weight:bold;">' +
+              '<th style="border:1px solid #334155; padding:8px;">ID</th>' +
+              '<th style="border:1px solid #334155; padding:8px;">TRABAJADOR</th>' +
+              '<th style="border:1px solid #334155; padding:8px;">FECHA</th>' +
+              '<th style="border:1px solid #334155; padding:8px;">HORARIO</th>' +
+              '<th style="border:1px solid #334155; padding:8px;">HORAS CALCULADAS</th>' +
+              '<th style="border:1px solid #334155; padding:8px;">CENTRO DE COSTO</th>' +
+              '<th style="border:1px solid #334155; padding:8px;">DESCRIPCIÓN</th>' +
+            '</tr>' +
+          '</thead>' +
+          '<tbody>' + tableRows + '</tbody>' +
+          '<tfoot>' +
+            '<tr>' +
+              '<td colspan="4" style="background-color:#f1f5f9; font-weight:bold; text-align:right; border:1px solid #cbd5e1; padding:8px;">TOTAL HORAS ACUMULADAS:</td>' +
+              '<td style="background-color:#ecfdf5; font-weight:bold; color:#047857; text-align:right; border:2px solid #10b981; padding:8px;">' + totalHours.toFixed(2) + ' hrs</td>' +
+              '<td colspan="2" style="background-color:#f1f5f9; border:1px solid #cbd5e1;"></td>' +
+            '</tr>' +
+          '</tfoot>' +
+        '</table>' +
+      '</body>' +
+      '</html>';
+
+    const blob = new Blob(['\ufeff' + excelHTML], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Registros_Horas_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `Reporte_Horas_${new Date().toISOString().split('T')[0]}.xls`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // 2. EXPORTAR A PDF (Vista e Impresión Limpia)
+  // 2. EXPORTAR A PDF
   const handleExportPDF = () => {
     if (records.length === 0) {
       alert("No hay registros disponibles para generar el PDF.");
       return;
     }
 
+    const totalHours = records.reduce((acc, r) => acc + (parseFloat(r.calculated_hours || r.horas || 0)), 0);
+
+    let rows = '';
+    records.forEach((r) => {
+      rows += '<tr>' +
+        '<td style="padding:8px; border:1px solid #ddd;">' + (r.worker_name || r.trabajador || 'N/A') + '</td>' +
+        '<td style="padding:8px; border:1px solid #ddd;">' + (r.work_date || r.fecha || 'N/A') + '</td>' +
+        '<td style="padding:8px; border:1px solid #ddd;">' + (r.entry_time || '') + ' - ' + (r.exit_time || '') + '</td>' +
+        '<td style="padding:8px; border:1px solid #ddd; text-align:center; color:#047857;"><strong>' + (r.calculated_hours || 0) + ' hrs</strong></td>' +
+        '<td style="padding:8px; border:1px solid #ddd;">' + (r.cost_center || '-') + '</td>' +
+      '</tr>';
+    });
+
     const printWindow = window.open('', '_blank');
-    const tableRows = records.map(r => `
-      <tr>
-        <td style="padding: 8px; border: 1px solid #ddd;">${r.worker_name || r.trabajador || 'N/A'}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${r.work_date || r.fecha || 'N/A'}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${r.entry_time || ''} - ${r.exit_time || ''}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;"><strong>${r.calculated_hours || 0} hrs</strong></td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${r.cost_center || '-'}</td>
-      </tr>
-    `).join('');
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Reporte de Registros de Jornadas</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-            h1 { font-size: 20px; color: #0d9488; margin-bottom: 5px; }
-            p { font-size: 12px; color: #666; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; font-size: 13px; }
-            th { background-color: #0f172a; color: white; padding: 10px; border: 1px solid #0f172a; text-align: left; }
-          </style>
-        </head>
-        <body>
-          <h1>Reporte General de Control de Horas</h1>
-          <p>Generado el: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Trabajador</th>
-                <th>Fecha</th>
-                <th>Horario</th>
-                <th>Horas</th>
-                <th>Centro de Costo</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${tableRows}
-            </tbody>
-          </table>
-        </body>
-      </html>
-    `);
-
+    printWindow.document.write(
+      '<html><head><title>Reporte de Registros</title>' +
+      '<style>body{font-family:Arial,sans-serif;padding:20px;color:#1e293b;} table{width:100%;border-collapse:collapse;font-size:12px;} th{background-color:#0f172a;color:white;padding:10px;text-align:left;} tfoot td{background-color:#f8fafc;font-weight:bold;padding:10px;border:1px solid #cbd5e1;}</style>' +
+      '</head><body>' +
+      '<h1 style="color:#0d9488;margin-bottom:4px;">Reporte General de Control de Horas</h1>' +
+      '<p style="font-size:11px;color:#64748b;margin-bottom:20px;">Generado el: ' + new Date().toLocaleDateString() + ' | Total registros: ' + records.length + '</p>' +
+      '<table><thead><tr><th>Trabajador</th><th>Fecha</th><th>Horario</th><th>Horas</th><th>Centro de Costo</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '<tfoot><tr><td colspan="3" style="text-align:right;">TOTAL GENERAL:</td><td style="text-align:center;color:#047857;">' + totalHours.toFixed(2) + ' hrs</td><td></td></tr></tfoot>' +
+      '</table></body></html>'
+    );
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 500);
+    setTimeout(() => { printWindow.print(); }, 500);
   };
 
-  // 3. IMPORTAR DESDE ARCHIVO EXCEL/CSV
-  const handleFileChange = async (e) => {
+  // 3. IMPORTAR DESDE EXCEL / CSV
+  const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -130,7 +149,7 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
     reader.onload = async (evt) => {
       try {
         const text = evt.target.result;
-        const lines = text.split('\n').filter(line => line.trim() !== '');
+        const lines = text.split('\n').filter((l) => l.trim() !== '');
         if (lines.length <= 1) {
           alert("El archivo no contiene registros válidos.");
           setImporting(false);
@@ -138,9 +157,8 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
         }
 
         let importedCount = 0;
-        // Omitir cabecera (índice 0)
         for (let i = 1; i < lines.length; i++) {
-          const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g, '').trim());
+          const cols = lines[i].split(',').map((c) => c.replace(/^"|"$/g, '').trim());
           if (cols.length >= 3) {
             const newRecord = {
               worker_name: cols[0] || cols[1] || 'Importado',
@@ -156,11 +174,11 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
           }
         }
 
-        alert(`¡Éxito! Se importaron ${importedCount} registros a PostgreSQL.`);
+        alert("¡Éxito! Se importaron " + importedCount + " registros a PostgreSQL.");
         if (onRefresh) onRefresh();
       } catch (err) {
         console.error(err);
-        alert("Error al procesar el archivo. Asegúrate de que sea un formato CSV o Excel válido.");
+        alert("Error al procesar el archivo. Asegúrate de que sea un formato CSV válido.");
       } finally {
         setImporting(false);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -172,7 +190,6 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
 
   return (
     <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 shadow-2xl text-slate-100">
-      {/* Cabecera, Buscador y Botonera Importar/Exportar */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -184,9 +201,7 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
           </p>
         </div>
 
-        {/* Acciones de Importación y Exportación */}
         <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
-          {/* Input oculto para la subida de archivos */}
           <input
             type="file"
             accept=".csv, .xlsx, .xls"
@@ -210,7 +225,7 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
             type="button"
             onClick={handleExportExcel}
             className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-colors flex items-center gap-1.5"
-            title="Exportar a archivo Excel / CSV"
+            title="Exportar a Excel"
           >
             <FileSpreadsheet size={14} />
             <span>Excel</span>
@@ -220,13 +235,12 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
             type="button"
             onClick={handleExportPDF}
             className="px-3 py-2 rounded-xl text-xs font-semibold bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 border border-teal-500/20 transition-colors flex items-center gap-1.5"
-            title="Generar y descargar documento PDF"
+            title="Generar e imprimir PDF"
           >
             <FileText size={14} />
             <span>PDF</span>
           </button>
 
-          {/* Buscador */}
           <div className="relative flex-1 sm:w-48 lg:w-56 min-w-[160px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
             <input
@@ -240,7 +254,6 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
         </div>
       </div>
 
-      {/* Tabla de Registros */}
       <div className="overflow-x-auto rounded-xl border border-slate-800/80">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-950/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
@@ -325,7 +338,6 @@ export default function RegistrosTabla({ records = [], onDelete, onEdit, onRefre
         </table>
       </div>
 
-      {/* Modal flotante de Confirmación */}
       <ConfirmModal
         isOpen={Boolean(deleteId)}
         onClose={() => setDeleteId(null)}
