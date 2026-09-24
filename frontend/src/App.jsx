@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import XLSX from "xlsx-js-style"; // Librería profesional con soporte de estilos y colores
+import XLSX from "xlsx-js-style";
 import { 
   registerUser, 
   loginUser, 
@@ -19,8 +19,12 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState("gestion");
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
+  
+  // Nuevos estados para filtros avanzados
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [filterType, setFilterType] = useState("all"); // "all", "week", "month"
+  const [selectedFilterValue, setSelectedFilterValue] = useState(""); // Valor del mes (YYYY-MM) o semana (YYYY-WXX)
+  const [selectedMonth, setSelectedMonth] = useState("all"); // Para la pestaña de estadísticas
 
   const [workerName, setWorkerName] = useState("");
   const [workDate, setWorkDate] = useState(new Date().toISOString().split("T")[0]);
@@ -135,32 +139,55 @@ export default function App() {
     }
   };
 
+  // Función auxiliar para obtener el número de semana de una fecha (YYYY-WXX)
+  const getWeekNumber = (dateString) => {
+    const d = new Date(dateString);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    const weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+    return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  };
+
+  // Filtrado avanzado de registros en la tabla
   const filteredRecords = records.filter((rec) => {
     const name = (rec.worker_name || rec.trabajador || "").toLowerCase();
     const center = (rec.cost_center || rec.centro_costo || "").toLowerCase();
-    const date = (rec.work_date || rec.fecha || "").toLowerCase();
+    const date = (rec.work_date || rec.fecha || "");
     const desc = (rec.description || rec.descripcion || "").toLowerCase();
     const term = searchTerm.toLowerCase();
-    return name.includes(term) || center.includes(term) || date.includes(term) || desc.includes(term);
+
+    // Filtro de texto general
+    const matchesSearch = name.includes(term) || center.includes(term) || date.includes(term) || desc.includes(term);
+    if (!matchesSearch) return false;
+
+    // Filtro por tipo (Mes o Semana)
+    if (filterType === "month" && selectedFilterValue) {
+      return date.startsWith(selectedFilterValue); // YYYY-MM
+    }
+    if (filterType === "week" && selectedFilterValue) {
+      return getWeekNumber(date) === selectedFilterValue; // YYYY-WXX
+    }
+
+    return true;
   });
 
-  // Exportar a Excel con diseño profesional, colores corporativos y totales
+  // Exportar a Excel (solo los registros actualmente filtrados)
   const handleExportExcel = () => {
-    if (records.length === 0) {
-      alert("No hay registros para exportar.");
+    if (filteredRecords.length === 0) {
+      alert("No hay registros filtrados para exportar.");
       return;
     }
 
-    // 1. Construir matriz de datos (Filas y Columnas)
     const aoa = [
-      ["REPORTE GENERAL DE JORNADAS Y COSTOS"], // Título superior
-      [], // Espacio
-      ["N°", "Trabajador", "Fecha", "Entrada", "Salida", "Horas", "Centro de Costo", "Descripción de Tareas"] // Cabeceras
+      ["REPORTE FILTRADO DE JORNADAS Y COSTOS"],
+      [],
+      ["N°", "Trabajador", "Fecha", "Entrada", "Salida", "Horas", "Centro de Costo", "Descripción de Tareas"]
     ];
 
     let totalHorasSuma = 0;
 
-    records.forEach((r, index) => {
+    filteredRecords.forEach((r, index) => {
       const h = Number(r.calculated_hours || r.horas || 0);
       totalHorasSuma += h;
       aoa.push([
@@ -175,84 +202,39 @@ export default function App() {
       ]);
     });
 
-    // Fila de Total Final
     aoa.push(["", "", "", "", "TOTAL HORAS:", totalHorasSuma, "", ""]);
 
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
 
-    // 2. Definir Estilos Profesionales
     const headerStyle = {
       font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "4F46E5" } }, // Color Índigo Corporativo
+      fill: { fgColor: { rgb: "4F46E5" } },
       alignment: { horizontal: "center", vertical: "center" },
-      border: {
-        top: { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "thin", color: { rgb: "000000" } },
-        left: { style: "thin", color: { rgb: "000000" } },
-        right: { style: "thin", color: { rgb: "000000" } }
-      }
+      border: { top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } }, left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } } }
     };
+    const titleStyle = { font: { name: "Arial", sz: 14, bold: true, color: { rgb: "1E293B" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const cellStyle = { font: { name: "Arial", sz: 10 }, border: { top: { style: "thin", color: { rgb: "E2E8F0" } }, bottom: { style: "thin", color: { rgb: "E2E8F0" } }, left: { style: "thin", color: { rgb: "E2E8F0" } }, right: { style: "thin", color: { rgb: "E2E8F0" } } }, alignment: { vertical: "center" } };
+    const totalStyle = { font: { name: "Arial", sz: 11, bold: true, color: { rgb: "0F172A" } }, fill: { fgColor: { rgb: "E2E8F0" } }, border: { top: { style: "medium", color: { rgb: "000000" } }, bottom: { style: "medium", color: { rgb: "000000" } } }, alignment: { horizontal: "right", vertical: "center" } };
 
-    const titleStyle = {
-      font: { name: "Arial", sz: 14, bold: true, color: { rgb: "1E293B" } },
-      alignment: { horizontal: "center", vertical: "center" }
-    };
-
-    const cellStyle = {
-      font: { name: "Arial", sz: 10 },
-      border: {
-        top: { style: "thin", color: { rgb: "E2E8F0" } },
-        bottom: { style: "thin", color: { rgb: "E2E8F0" } },
-        left: { style: "thin", color: { rgb: "E2E8F0" } },
-        right: { style: "thin", color: { rgb: "E2E8F0" } }
-      },
-      alignment: { vertical: "center" }
-    };
-
-    const totalStyle = {
-      font: { name: "Arial", sz: 11, bold: true, color: { rgb: "0F172A" } },
-      fill: { fgColor: { rgb: "E2E8F0" } }, // Gris claro corporativo
-      border: {
-        top: { style: "medium", color: { rgb: "000000" } },
-        bottom: { style: "medium", color: { rgb: "000000" } }
-      },
-      alignment: { horizontal: "right", vertical: "center" }
-    };
-
-    // Aplicar estilos celda por celda
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let R = range.s.r; R <= range.e.r; ++R) {
       for (let C = range.s.c; C <= range.e.c; ++C) {
         const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
         if (!worksheet[cellAddress]) continue;
-
-        if (R === 0) {
-          worksheet[cellAddress].s = titleStyle;
-        } else if (R === 2) {
-          worksheet[cellAddress].s = headerStyle;
-        } else if (R === range.e.r) {
-          worksheet[cellAddress].s = totalStyle;
-        } else {
-          worksheet[cellAddress].s = cellStyle;
-        }
+        if (R === 0) worksheet[cellAddress].s = titleStyle;
+        else if (R === 2) worksheet[cellAddress].s = headerStyle;
+        else if (R === range.e.r) worksheet[cellAddress].s = totalStyle;
+        else worksheet[cellAddress].s = cellStyle;
       }
     }
 
-    // Ancho de columnas adaptativo
     worksheet["!cols"] = [
-      { wch: 6 },  // N°
-      { wch: 22 }, // Trabajador
-      { wch: 14 }, // Fecha
-      { wch: 12 }, // Entrada
-      { wch: 12 }, // Salida
-      { wch: 14 }, // Horas
-      { wch: 20 }, // Centro de Costo
-      { wch: 40 }, // Descripción
+      { wch: 6 }, { wch: 22 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 40 }
     ];
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Jornadas Laborales");
-    XLSX.writeFile(workbook, "Reporte_Jornadas_Profesional.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte Filtrado");
+    XLSX.writeFile(workbook, "Reporte_Jornadas_Filtrado.xlsx");
   };
 
   const handleExportPDF = () => {
@@ -332,10 +314,9 @@ export default function App() {
     );
   }
 
-  const availableMonths = Array.from(new Set(records.map(r => {
-    const d = r.work_date || r.fecha;
-    return d ? d.substring(0, 7) : "";
-  }))).filter(Boolean).sort().reverse();
+  // Listados únicos para selectores de meses y semanas
+  const availableMonths = Array.from(new Set(records.map(r => (r.work_date || r.fecha || "").substring(0, 7)))).filter(Boolean).sort().reverse();
+  const availableWeeks = Array.from(new Set(records.map(r => getWeekNumber(r.work_date || r.fecha || "")))).filter(Boolean).sort().reverse();
 
   const recordsForStats = records.filter(r => {
     if (selectedMonth === "all") return true;
@@ -343,8 +324,7 @@ export default function App() {
     return d && d.startsWith(selectedMonth);
   });
 
-  const totalHoras = recordsForStats.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
-  
+  const totalHorasStats = recordsForStats.reduce((acc, curr) => acc + (Number(curr.calculated_hours || curr.horas) || 0), 0);
   const horasPorTrabajador = recordsForStats.reduce((acc, curr) => {
     const t = curr.worker_name || curr.trabajador || "Sin nombre";
     const h = Number(curr.calculated_hours || curr.horas) || 0;
@@ -509,7 +489,7 @@ export default function App() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 print:hidden">
                 <div>
                   <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
-                  <p className="text-xs text-slate-400">Consulta, filtra y gestiona tus jornadas laborales</p>
+                  <p className="text-xs text-slate-400">Filtra por nombre, semana o mes y exporta tus datos</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -517,7 +497,7 @@ export default function App() {
                     📥 Importar
                   </button>
                   <button onClick={handleExportExcel} className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
-                    📊 Excel
+                    📊 Excel ({filteredRecords.length})
                   </button>
                   <button onClick={handleExportPDF} className="bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
                     📄 PDF
@@ -525,20 +505,60 @@ export default function App() {
                 </div>
               </div>
 
-              <div className="mb-4 print:hidden">
+              {/* Panel de Filtros Avanzados */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 print:hidden">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="🔍 Buscar por trabajador, centro de costo, descripción o fecha..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                  placeholder="🔍 Buscar trabajador o centro..."
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
                 />
+
+                <select
+                  value={filterType}
+                  onChange={(e) => {
+                    setFilterType(e.target.value);
+                    setSelectedFilterValue("");
+                  }}
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                >
+                  <option value="all">⚡ Todos los registros</option>
+                  <option value="month">📅 Filtrar por Mes</option>
+                  <option value="week">📆 Filtrar por Semana</option>
+                </select>
+
+                {filterType === "month" && (
+                  <select
+                    value={selectedFilterValue}
+                    onChange={(e) => setSelectedFilterValue(e.target.value)}
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                  >
+                    <option value="">Selecciona el mes...</option>
+                    {availableMonths.map(m => (
+                      <option key={m} value={m}>Mes: {m}</option>
+                    ))}
+                  </select>
+                )}
+
+                {filterType === "week" && (
+                  <select
+                    value={selectedFilterValue}
+                    onChange={(e) => setSelectedFilterValue(e.target.value)}
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                  >
+                    <option value="">Selecciona la semana...</option>
+                    {availableWeeks.map(w => (
+                      <option key={w} value={w}>Semana: {w}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {loading ? (
                 <p className="text-center text-slate-500 py-8">Cargando registros...</p>
               ) : filteredRecords.length === 0 ? (
-                <p className="text-center text-slate-500 py-8">No se encontraron registros coincidentes.</p>
+                <p className="text-center text-slate-500 py-8">No se encontraron registros con los filtros seleccionados.</p>
               ) : (
                 <div className="overflow-x-auto flex-1">
                   <table className="w-full text-left border-collapse">
@@ -611,7 +631,7 @@ export default function App() {
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
                 <div>
                   <p className="text-slate-400 text-sm font-medium">Horas del Periodo</p>
-                  <h3 className="text-4xl font-extrabold text-emerald-400 mt-1">{totalHoras.toFixed(1)} hrs</h3>
+                  <h3 className="text-4xl font-extrabold text-emerald-400 mt-1">{totalHorasStats.toFixed(1)} hrs</h3>
                 </div>
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-2xl">
                   ⏱️
@@ -636,7 +656,7 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   {Object.entries(horasPorTrabajador).map(([nombre, horas]) => {
-                    const porcentaje = totalHoras > 0 ? (horas / totalHoras) * 100 : 0;
+                    const porcentaje = totalHorasStats > 0 ? (horas / totalHorasStats) * 100 : 0;
                     return (
                       <div key={nombre}>
                         <div className="flex justify-between text-sm mb-1">
@@ -660,9 +680,9 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   {Object.entries(horasPorCentro).map(([centro, horas]) => {
-                    const porcentaje = totalHoras > 0 ? (horas / totalHoras) * 100 : 0;
+                    const porcentaje = totalHorasStats > 0 ? (horas / totalHorasStats) * 100 : 0;
                     return (
-                      <div key= {centro}>
+                      <div key={centro}>
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-slate-200 font-medium">{centro || "Sin especificar"}</span>
                           <span className="text-indigo-400 font-bold">{horas.toFixed(1)} hrs ({porcentaje.toFixed(0)}%)</span>
