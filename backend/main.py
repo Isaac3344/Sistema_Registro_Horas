@@ -1,3 +1,4 @@
+import traceback
 from typing import Dict, Any
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,25 +10,36 @@ from database import engine, get_db
 # 1. Crear tablas si no existen
 models.Base.metadata.create_all(bind=engine)
 
-# 2. Ejecutar cada instrucción de migración en su propia transacción aislada
-migration_sqls = [
-    "ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;",
+# 2. Lista de consultas de migración a ejecutar independientemente
+migration_queries = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS password VARCHAR;",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS hashed_password VARCHAR;",
+    "ALTER TABLE users ALTER COLUMN password DROP NOT NULL;",
+    "ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL;",
+    
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS user_id INTEGER;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS worker_name VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS work_date VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS entry_time VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS exit_time VARCHAR;",
-    "ALTER TABLE records ADD COLUMN IF NOT EXISTS calculated_hours FLOAT;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS calculated_hours DOUBLE PRECISION;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS cost_center VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS description VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS trabajador VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS fecha VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS hora_entrada VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS hora_salida VARCHAR;",
-    "ALTER TABLE records ADD COLUMN IF NOT EXISTS horas FLOAT;",
+    "ALTER TABLE records ADD COLUMN IF NOT EXISTS horas DOUBLE PRECISION;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS centro_costo VARCHAR;",
     "ALTER TABLE records ADD COLUMN IF NOT EXISTS descripcion VARCHAR;",
+
+    "ALTER TABLE records ALTER COLUMN worker_name DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN work_date DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN entry_time DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN exit_time DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN calculated_hours DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN cost_center DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN description DROP NOT NULL;",
     "ALTER TABLE records ALTER COLUMN trabajador DROP NOT NULL;",
     "ALTER TABLE records ALTER COLUMN fecha DROP NOT NULL;",
     "ALTER TABLE records ALTER COLUMN hora_entrada DROP NOT NULL;",
@@ -35,14 +47,16 @@ migration_sqls = [
     "ALTER TABLE records ALTER COLUMN horas DROP NOT NULL;",
     "ALTER TABLE records ALTER COLUMN centro_costo DROP NOT NULL;",
     "ALTER TABLE records ALTER COLUMN descripcion DROP NOT NULL;",
+    "ALTER TABLE records ALTER COLUMN user_id DROP NOT NULL;",
 ]
 
-for sql_query in migration_sqls:
+for q in migration_queries:
     try:
-        with engine.begin() as conn:
-            conn.execute(text(sql_query))
-    except Exception as err:
-        print(f"Aviso migración ({sql_query}): {err}")
+        with engine.connect() as conn:
+            conn.execute(text(q))
+            conn.commit()
+    except Exception as query_err:
+        pass
 
 app = FastAPI(title="API Multiusuario Control de Horas")
 
@@ -98,16 +112,16 @@ def login(credentials: Dict[str, str], db: Session = Depends(get_db)):
 
     return {"id": user.id, "username": user.username, "message": "Autenticación exitosa"}
 
-# OBTENER REGISTROS DE UN USUARIO
+# OBTENER REGISTROS DEL USUARIO
 @app.get("/records")
 def get_records(user_id: int, db: Session = Depends(get_db)):
     try:
         return db.query(models.Record).filter(models.Record.user_id == user_id).order_by(models.Record.id.desc()).all()
     except Exception as e:
-        print(f"Error en GET /records: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error GET /records: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error al obtener registros: {str(e)}")
 
-# CREAR REGISTRO PARA UN USUARIO
+# CREAR REGISTRO PARA EL USUARIO
 @app.post("/records")
 def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depends(get_db)):
     try:
@@ -143,8 +157,8 @@ def create_record(record_data: Dict[str, Any], user_id: int, db: Session = Depen
         return db_record
     except Exception as e:
         db.rollback()
-        print(f"Error al crear registro: {e}")
-        raise HTTPException(status_code=500, detail=f"Error al guardar registro: {str(e)}")
+        print(f"Error POST /records: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error interno al guardar: {str(e)}")
 
 # ACTUALIZAR REGISTRO
 @app.put("/records/{record_id}")
