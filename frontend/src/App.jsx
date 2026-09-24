@@ -11,6 +11,7 @@ import {
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [userRole, setUserRole] = useState(localStorage.getItem("userRole") || "admin");
   const [isLoginView, setIsLoginView] = useState(true);
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
@@ -18,6 +19,7 @@ export default function App() {
 
   const [currentTab, setCurrentTab] = useState("gestion"); // "gestion", "estadisticas", "empleados"
   const [records, setRecords] = useState([]);
+  const [usersList, setUsersList] = useState([]);
   const [loading, setLoading] = useState(false);
   
   const [searchTerm, setSearchTerm] = useState("");
@@ -33,18 +35,19 @@ export default function App() {
   const [description, setDescription] = useState("");
   const [editingId, setEditingId] = useState(null);
 
-  // Estados para que el Admin cree cuentas de Empleados
   const [empUsername, setEmpUsername] = useState("");
   const [empPassword, setEmpPassword] = useState("");
   const [empCedula, setEmpCedula] = useState("");
   const [empSuccessMsg, setEmpSuccessMsg] = useState("");
 
-  const currentUserRole = localStorage.getItem("userRole") || "admin";
-  const isReadOnly = currentUserRole === "employee";
+  const isReadOnly = userRole === "employee";
 
   useEffect(() => {
     if (token) {
       loadRecords();
+      if (!isReadOnly) {
+        loadUsers();
+      }
     }
   }, [token]);
 
@@ -62,12 +65,28 @@ export default function App() {
     }
   };
 
+  const loadUsers = async () => {
+    try {
+      const response = await fetch("https://backend-registro-horas.onrender.com/users", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUsersList(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError("");
     try {
       let data = await loginUser(usernameInput, passwordInput);
       setToken(data.token);
+      setUserRole(data.role || "admin");
+      localStorage.setItem("token", data.token);
       localStorage.setItem("userRole", data.role || "admin");
       setUsernameInput("");
       setPasswordInput("");
@@ -86,10 +105,11 @@ export default function App() {
         role: "employee",
         cedula: empCedula
       });
-      setEmpSuccessMsg(`¡Acceso creado exitosamente para el empleado ${empUsername}!`);
+      setEmpSuccessMsg(`¡Acceso creado para ${empUsername} (Cédula: ${empCedula})!`);
       setEmpUsername("");
       setEmpPassword("");
       setEmpCedula("");
+      loadUsers();
     } catch (err) {
       alert("Error al crear empleado: " + err.message);
     }
@@ -99,6 +119,7 @@ export default function App() {
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     setToken("");
+    setUserRole("admin");
     setRecords([]);
   };
 
@@ -259,7 +280,6 @@ export default function App() {
   };
 
   const handleExportPDF = () => window.print();
-  const handleImport = () => alert("Función no disponible.");
 
   if (!token) {
     return (
@@ -382,7 +402,7 @@ export default function App() {
                 currentTab === "empleados" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
               }`}
             >
-              👤 Crear Acceso Empleado
+              👤 Gestión de Accesos
             </button>
           )}
         </div>
@@ -598,61 +618,100 @@ export default function App() {
             </div>
           </div>
         ) : currentTab === "empleados" ? (
-          /* ================= PESTAÑA PARA QUE EL ADMIN CREE EMPLEADOS ================= */
-          <div className="max-w-md mx-auto bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-            <h2 className="text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
-            <p className="text-xs text-slate-400 mb-6">Genera un usuario de solo vista vinculado a su número de cédula.</p>
+          /* ================= GESTIÓN Y LISTADO DE USUARIOS Y ROLES ================= */
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+              <h2 className="text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
+              <p className="text-xs text-slate-400 mb-6">Genera un usuario de solo vista vinculado a su número de cédula.</p>
 
-            {empSuccessMsg && (
-              <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm text-center">
-                {empSuccessMsg}
-              </div>
-            )}
+              {empSuccessMsg && (
+                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm text-center">
+                  {empSuccessMsg}
+                </div>
+              )}
 
-            <form onSubmit={handleCreateEmployee} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario del Empleado</label>
-                <input
-                  type="text"
-                  required
-                  value={empUsername}
-                  onChange={(e) => setEmpUsername(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                  placeholder="Ej. juan_empleado"
-                />
-              </div>
+              <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario</label>
+                  <input
+                    type="text"
+                    required
+                    value={empUsername}
+                    onChange={(e) => setEmpUsername(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    placeholder="Ej. juan_emp"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
-                <input
-                  type="password"
-                  required
-                  value={empPassword}
-                  onChange={(e) => setEmpPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                  placeholder="••••••••"
-                />
-              </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
+                  <input
+                    type="password"
+                    required
+                    value={empPassword}
+                    onChange={(e) => setEmpPassword(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    placeholder="••••••••"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Cédula o Identificación del Empleado *</label>
-                <input
-                  type="text"
-                  required
-                  value={empCedula}
-                  onChange={(e) => setEmpCedula(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
-                  placeholder="Ej. 1728394850 (Debe coincidir con su Centro de Costo)"
-                />
-              </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Cédula del Empleado *</label>
+                  <input
+                    type="text"
+                    required
+                    value={empCedula}
+                    onChange={(e) => setEmpCedula(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    placeholder="Ej. 1728394850"
+                  />
+                </div>
 
-              <button
-                type="submit"
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition duration-200"
-              >
-                Crear Cuenta de Empleado
-              </button>
-            </form>
+                <div className="md:col-span-3">
+                  <button
+                    type="submit"
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition duration-200"
+                  >
+                    Crear Cuenta de Empleado
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Listado de Usuarios Registrados y sus Roles */}
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+              <h2 className="text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados en el Sistema</h2>
+              {usersList.length === 0 ? (
+                <p className="text-slate-500 text-sm text-center py-4">No hay usuarios cargados.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
+                        <th className="pb-3 px-3">ID</th>
+                        <th className="pb-3 px-3">Usuario</th>
+                        <th className="pb-3 px-3">Rol</th>
+                        <th className="pb-3 px-3">Cédula Vinculada</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60 text-sm">
+                      {usersList.map((u) => (
+                        <tr key={u.id} className="hover:bg-slate-800/40 transition">
+                          <td className="py-3 px-3 text-slate-400">#{u.id}</td>
+                          <td className="py-3 px-3 font-semibold text-white">{u.username}</td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                              {u.role === 'admin' ? '👑 Administrador' : '👁️ Empleado (Solo Vista)'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-slate-300 font-mono text-xs">{u.cedula || "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div className="space-y-6 max-w-5xl mx-auto">

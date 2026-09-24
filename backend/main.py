@@ -119,11 +119,20 @@ def login(credentials: Dict[str, Any], db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.id})
     return {"id": user.id, "username": user.username, "role": user_role, "cedula": user_cedula, "token": access_token}
 
+# Endpoint para listar usuarios creados (para el panel del administrador)
+@app.get("/users")
+def get_users(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
+    try:
+        users = db.query(models.User).all()
+        return [{"id": u.id, "username": u.username, "role": getattr(u, "role", "admin"), "cedula": getattr(u, "cedula", "-")} for u in users]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/records")
 def get_records(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     try:
         current_user = db.query(models.User).filter(models.User.id == user_id).first()
-        admin_user = db.query(models.User).order_by(models.User.id.asc()).first()
+        admin_user = db.query(models.User).filter(models.User.role == "admin").order_by(models.User.id.asc()).first()
         admin_id = admin_user.id if admin_user else user_id
 
         user_role = getattr(current_user, "role", "admin") if current_user else "admin"
