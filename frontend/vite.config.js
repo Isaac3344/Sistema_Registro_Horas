@@ -5,9 +5,21 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   plugins: [
     react(),
+
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+
+      // Permitir archivos de hasta 5 MB en la precarga del Service Worker
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024
+      },
+
+      includeAssets: [
+        'favicon.ico',
+        'apple-touch-icon.png',
+        'masked-icon.svg'
+      ],
+
       manifest: {
         name: 'JornadaPro',
         short_name: 'JornadaPro',
@@ -15,6 +27,7 @@ export default defineConfig({
         theme_color: '#0F172A',
         background_color: '#0F172A',
         display: 'standalone',
+
         icons: [
           {
             src: 'https://cdn-icons-png.flaticon.com/512/3076/3076129.png',
