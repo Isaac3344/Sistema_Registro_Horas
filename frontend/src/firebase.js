@@ -1,11 +1,10 @@
 // Firebase
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 
 // Configuración de Firebase
 const firebaseConfig = {
-  apiKey: "AIzaSyCjInmQgWHWEq47tFNPhJVwOPMiwRmApkk",
+  apiKey: "AIzaSyCJinmQgWHWEq47tFNPhJVwOPMiWRApkk",
   authDomain: "control-de-jornadas-1a06f.firebaseapp.com",
   projectId: "control-de-jornadas-1a06f",
   storageBucket: "control-de-jornadas-1a06f.firebasestorage.app",
@@ -19,8 +18,5 @@ const app = initializeApp(firebaseConfig);
 
 // Inicializar Firestore
 export const db = getFirestore(app);
-
-// Inicializar Analytics
-export const analytics = getAnalytics(app);
 
 export default app;
