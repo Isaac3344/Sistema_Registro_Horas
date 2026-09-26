@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import CustomModal from "./components/CustomModal";
+import Toast from "./components/Toast";
 import { 
   fetchRecords, 
   createRecord, 
@@ -9,7 +12,6 @@ import {
   deleteRecord 
 } from "./api";
 
-// Componente interno para la ilustración animada del login
 function LoginIllustration({ slideIndex }) {
   return (
     <div className="relative w-full h-56 flex items-center justify-center my-auto">
@@ -68,6 +70,23 @@ export default function App() {
   const [userRole, setUserRole] = useState(localStorage.getItem("userRole") || "admin");
   const [currentUsername, setCurrentUsername] = useState(localStorage.getItem("currentUsername") || "");
   
+  // Estado para el Modo Oscuro
+  const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode") === "true");
+
+  // Estado para Notificaciones Toast
+  const [toast, setToast] = useState({ message: "", type: "success" });
+
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: "", type: "success" }), 3500);
+  };
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem("darkMode", newMode);
+  };
+  
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [adminTokenInput, setAdminTokenInput] = useState("");
@@ -107,18 +126,9 @@ export default function App() {
 
   const [loginSlide, setLoginSlide] = useState(0);
   const loginSlidesData = [
-    {
-      title: "Control Profesional de Jornadas",
-      desc: "Gestiona horas de entrada, salida y reportes en tiempo real con máxima precisión."
-    },
-    {
-      title: "Gestión Multi-Usuario Ágil",
-      desc: "Administra accesos seguros y diferenciados para empleados y administradores."
-    },
-    {
-      title: "Reportes Inteligentes y Listos",
-      desc: "Exporta reportes detallados en Excel y PDF optimizados para control de nómina."
-    }
+    { title: "Control Profesional de Jornadas", desc: "Gestiona horas de entrada, salida y reportes en tiempo real con máxima precisión." },
+    { title: "Gestión Multi-Usuario Ágil", desc: "Administra accesos seguros y diferenciados para empleados y administradores." },
+    { title: "Reportes Inteligentes y Listos", desc: "Exporta reportes detallados en Excel y PDF optimizados para control de nómina." }
   ];
 
   useEffect(() => {
@@ -154,7 +164,6 @@ export default function App() {
   const [empUsername, setEmpUsername] = useState("");
   const [empPassword, setEmpPassword] = useState("");
   const [empCedula, setEmpCedula] = useState("");
-  const [empSuccessMsg, setEmpSuccessMsg] = useState("");
 
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -223,8 +232,10 @@ export default function App() {
           method: "DELETE",
           headers: { "Authorization": `Bearer ${token}` }
         });
-        if (response.ok) loadUsers();
-        else {
+        if (response.ok) {
+          loadUsers();
+          showToast("Usuario eliminado correctamente");
+        } else {
           const errData = await response.json();
           showAlert("Error", "Error al eliminar usuario: " + (errData.detail || "Error desconocido"), "danger");
         }
@@ -268,6 +279,7 @@ export default function App() {
       setUsernameInput("");
       setPasswordInput("");
       setAdminTokenInput("");
+      showToast("¡Bienvenido a JornadaPro!");
     } catch (err) {
       setAuthError(err.message);
     }
@@ -275,7 +287,6 @@ export default function App() {
 
   const handleCreateEmployee = async (e) => {
     e.preventDefault();
-    setEmpSuccessMsg("");
     try {
       const response = await fetch("https://backend-registro-horas.onrender.com/register", {
         method: "POST",
@@ -285,7 +296,7 @@ export default function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Error al crear empleado");
 
-      setEmpSuccessMsg(`¡Acceso creado para ${empUsername}!`);
+      showToast(`¡Acceso creado para ${empUsername}!`);
       setEmpUsername("");
       setEmpPassword("");
       setEmpCedula("");
@@ -312,7 +323,7 @@ export default function App() {
     }
 
     localStorage.setItem("currentPassword", newPassword);
-    setProfileMsg("¡Contraseña actualizada con éxito!");
+    showToast("¡Contraseña actualizada con éxito!");
     setOldPassword("");
     setNewPassword("");
   };
@@ -326,6 +337,7 @@ export default function App() {
     setUserRole("admin");
     setCurrentUsername("");
     setRecords([]);
+    showToast("Sesión cerrada correctamente", "info");
   };
 
   const calculateHours = (entry, exit) => {
@@ -347,8 +359,10 @@ export default function App() {
       if (editingId) {
         await updateRecord(editingId, recordData);
         setEditingId(null);
+        showToast("Registro actualizado con éxito");
       } else {
         await createRecord(recordData);
+        showToast("Registro guardado con éxito");
       }
       setWorkerName(""); setCostCenter(""); setDescription("");
       loadRecords();
@@ -374,6 +388,7 @@ export default function App() {
       try {
         await deleteRecord(id);
         loadRecords();
+        showToast("Registro eliminado");
       } catch (err) {
         showAlert("Error", "Error al eliminar: " + err.message, "danger");
       }
@@ -478,14 +493,67 @@ export default function App() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
     XLSX.writeFile(workbook, "Reporte_Jornadas.xlsx");
+    showToast("Reporte Excel exportado con éxito");
   };
 
-  const handleExportPDF = () => window.print();
+  // Exportar a PDF Formal con jsPDF
+  const handleExportPDF = () => {
+    if (filteredRecords.length === 0) {
+      showAlert("Atención", "No hay registros para exportar en PDF.", "info");
+      return;
+    }
+    const doc = new jsPDF();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(37, 99, 235);
+    doc.text("JornadaPro - Reporte Oficial de Jornadas", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Generado el: ${new Date().toLocaleDateString()} | Usuario: ${currentUsername || userRole}`, 14, 28);
+
+    const tableColumn = ["N°", "Trabajador", "Fecha", "Entrada", "Salida", "Horas", "Cédula"];
+    const tableRows = [];
+
+    let totalSumaHoras = 0;
+    filteredRecords.forEach((r, index) => {
+      const h = Number(r.calculated_hours || r.horas || 0);
+      totalSumaHoras += h;
+      tableRows.push([
+        index + 1,
+        r.worker_name || r.trabajador || "",
+        r.work_date || r.fecha || "",
+        r.entry_time || r.hora_entrada || "",
+        r.exit_time || r.hora_salida || "",
+        `${h.toFixed(1)} hrs`,
+        r.cost_center || r.centro_costo || "-"
+      ]);
+    });
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 35,
+      theme: "grid",
+      headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: "bold" },
+      styles: { fontSize: 9, cellPadding: 3 }
+    });
+
+    const finalY = doc.lastAutoTable.finalY || 40;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`Total de Horas Acumuladas: ${totalSumaHoras.toFixed(1)} hrs`, 14, finalY + 10);
+
+    doc.save("Reporte_Oficial_Jornadas.pdf");
+    showToast("PDF formal generado con éxito");
+  };
 
   if (!token) {
     return (
       <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4 font-sans text-slate-800">
         <CustomModal {...modalConfig} onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} />
+        <Toast {...toast} onClose={() => setToast({ message: "", type: "success" })} />
         <div className="bg-white shadow-[0_25px_50px_rgba(0,0,0,0.3)] border border-slate-100 rounded-[2.5rem] w-full max-w-4xl overflow-hidden flex flex-col md:flex-row">
           
           <div className="w-full md:w-1/2 bg-blue-600 text-white p-10 flex flex-col justify-between relative overflow-hidden">
@@ -603,10 +671,11 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f1f5f9] text-slate-900 flex flex-col md:flex-row font-sans">
+    <div className={`min-h-screen ${darkMode ? "bg-[#0B0F19] text-slate-100" : "bg-[#f1f5f9] text-slate-900"} flex flex-col md:flex-row font-sans transition-colors duration-300`}>
       <CustomModal {...modalConfig} onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} />
+      <Toast {...toast} onClose={() => setToast({ message: "", type: "success" })} />
 
-      <aside className="w-full md:w-72 bg-[#0F172A] text-white p-6 md:sticky md:top-0 md:h-screen flex flex-col justify-between shrink-0 print:hidden shadow-xl z-50">
+      <aside className={`w-full md:w-72 ${darkMode ? "bg-[#0F172A] border-r border-slate-800" : "bg-[#0F172A]"} text-white p-6 md:sticky md:top-0 md:h-screen flex flex-col justify-between shrink-0 print:hidden shadow-xl z-50`}>
         <div>
           <div className="flex items-center gap-3 mb-6 md:mb-10">
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-600/40">
@@ -615,32 +684,32 @@ export default function App() {
             <span className="font-black text-xl tracking-tight text-white">JornadaPro</span>
           </div>
 
-          <p className="text-[11px] uppercase tracking-wider text-slate-300 font-bold mb-3">Menú Principal</p>
+          <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-3">Menú Principal</p>
           
           <nav className="flex md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0">
             <button 
               onClick={() => setCurrentTab("gestion")} 
-              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'gestion' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'gestion' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
             >
               <span>📊</span> <span className="hidden sm:inline">Panel / Gestión</span><span className="sm:hidden">Gestión</span>
             </button>
             <button 
               onClick={() => setCurrentTab("estadisticas")} 
-              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'estadisticas' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'estadisticas' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
             >
               <span>📈</span> <span className="hidden sm:inline">Analíticas y Reportes</span><span className="sm:hidden">Reportes</span>
             </button>
             {!isReadOnly && (
               <button 
                 onClick={() => setCurrentTab("empleados")} 
-                className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'empleados' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+                className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'empleados' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
               >
                 <span>👥</span> <span className="hidden sm:inline">Accesos / Usuarios</span><span className="sm:hidden">Usuarios</span>
               </button>
             )}
             <button 
               onClick={() => setCurrentTab("perfil")} 
-              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'perfil' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'perfil' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
             >
               <span>⚙️</span> <span className="hidden sm:inline">Mi Perfil</span><span className="sm:hidden">Perfil</span>
             </button>
@@ -658,20 +727,29 @@ export default function App() {
 
       <div className="flex-1 flex flex-col min-h-screen overflow-y-auto">
         
-        <header className="bg-white border-b border-slate-200 px-6 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-40 print:hidden shadow-sm">
+        <header className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border-b px-6 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-40 print:hidden shadow-sm transition-colors duration-300`}>
           <div>
-            <h1 className="text-lg sm:text-xl font-black text-slate-900">¡Bienvenido de nuevo, {currentUsername || userRole}!</h1>
-            <p className="text-xs text-slate-600 font-bold">Resumen general y control de jornadas</p>
+            <h1 className="text-lg sm:text-xl font-black">¡Bienvenido de nuevo, {currentUsername || userRole}!</h1>
+            <p className={`text-xs font-bold ${darkMode ? "text-slate-400" : "text-slate-600"}`}>Resumen general y control de jornadas</p>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl">
+            {/* Botón de Modo Oscuro */}
+            <button 
+              onClick={toggleDarkMode}
+              className={`p-2.5 rounded-2xl text-sm font-bold border transition-all ${darkMode ? "bg-slate-800 border-slate-700 text-amber-400" : "bg-slate-100 border-slate-200 text-slate-700"}`}
+              title="Cambiar Modo Oscuro/Claro"
+            >
+              {darkMode ? "☀️" : "🌙"}
+            </button>
+
+            <div className={`hidden sm:flex items-center gap-3 border px-4 py-2 rounded-2xl ${darkMode ? "bg-slate-800 border-slate-700" : "bg-slate-50 border-slate-200"}`}>
               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
                 {(currentUsername || userRole).charAt(0).toUpperCase()}
               </div>
               <div className="text-left">
-                <p className="text-xs font-black text-slate-900">{currentUsername || "Usuario"}</p>
-                <p className="text-[10px] text-slate-600 font-bold capitalize">{userRole}</p>
+                <p className={`text-xs font-black ${darkMode ? "text-white" : "text-slate-900"}`}>{currentUsername || "Usuario"}</p>
+                <p className={`text-[10px] font-bold capitalize ${darkMode ? "text-slate-400" : "text-slate-600"}`}>{userRole}</p>
               </div>
             </div>
             <button onClick={handleLogout} className="bg-slate-100 text-red-600 px-3.5 py-2 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
@@ -685,9 +763,9 @@ export default function App() {
             <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-8`}>
               
               {!isReadOnly && (
-                <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm h-fit print:hidden">
+                <div className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-6 sm:p-8 rounded-[2rem] shadow-sm h-fit print:hidden`}>
                   <div className="flex justify-between items-center mb-6">
-                    <h2 className="font-black text-slate-900 text-base">
+                    <h2 className="font-black text-base">
                       {editingId ? "Editar Registro" : "Nuevo Registro"}
                     </h2>
                     <span className="text-blue-700 bg-blue-50 border border-blue-200 px-3.5 py-1.5 rounded-xl text-xs font-black">
@@ -697,30 +775,30 @@ export default function App() {
 
                   <form onSubmit={handleSubmitRecord} className="space-y-4">
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Trabajador</label>
-                      <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-sm font-bold focus:outline-none focus:border-blue-600" placeholder="Nombre completo" />
+                      <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Trabajador</label>
+                      <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-600 ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} placeholder="Nombre completo" />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Fecha</label>
-                      <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-sm font-bold focus:outline-none focus:border-blue-600" />
+                      <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Fecha</label>
+                      <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-600 ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Entrada</label>
-                        <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-sm font-bold focus:outline-none focus:border-blue-600" />
+                        <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Entrada</label>
+                        <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-600 ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Salida</label>
-                        <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-sm font-bold focus:outline-none focus:border-blue-600" />
+                        <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Salida</label>
+                        <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-600 ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Cédula / CC</label>
-                      <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-sm font-bold focus:outline-none focus:border-blue-600" placeholder="Ej. 1700000000" />
+                      <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Cédula / CC</label>
+                      <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-600 ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} placeholder="Ej. 1700000000" />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Descripción</label>
-                      <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-sm font-bold focus:outline-none focus:border-blue-600 resize-none" placeholder="Opcional..."></textarea>
+                      <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Descripción</label>
+                      <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-blue-600 resize-none ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} placeholder="Opcional..."></textarea>
                     </div>
                     <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-blue-600/30 transition-all text-sm mt-2">
                       {editingId ? "Actualizar Registro" : "Guardar Registro"}
@@ -729,38 +807,38 @@ export default function App() {
                 </div>
               )}
 
-              <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-white border border-slate-200 p-4 sm:p-8 rounded-[2rem] shadow-sm flex flex-col justify-between`}>
+              <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} ${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-4 sm:p-8 rounded-[2rem] shadow-sm flex flex-col justify-between`}>
                 <div>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
-                    <h2 className="font-black text-slate-900 text-lg">Historial de Registros</h2>
+                    <h2 className="font-black text-lg">Historial de Registros</h2>
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                       <button onClick={handleExportExcel} className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-2xl text-xs font-black transition-all">
                         Exportar Excel
                       </button>
                       <button onClick={handleExportPDF} className="bg-slate-100 border border-slate-300 text-slate-800 px-4 py-2 rounded-2xl text-xs font-black transition-all">
-                        Imprimir / PDF
+                        Exportar PDF
                       </button>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 print:hidden">
-                    <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-xs font-bold focus:outline-none">
+                    <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className={`border rounded-2xl px-4 py-3 text-xs font-bold focus:outline-none ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}>
                       <option value="all">Todos los trabajadores</option>
                       {uniqueWorkers.map(w => <option key={w} value={w}>{w}</option>)}
                     </select>
-                    <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-xs font-bold focus:outline-none">
+                    <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className={`border rounded-2xl px-4 py-3 text-xs font-bold focus:outline-none ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}>
                       <option value="all">Filtro de Tiempo</option>
                       <option value="month">Por Mes</option>
                       <option value="week">Por Semana</option>
                     </select>
                     {filterType === "month" && (
-                      <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-xs font-bold focus:outline-none">
+                      <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className={`border rounded-2xl px-4 py-3 text-xs font-bold focus:outline-none ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}>
                         <option value="">Selecciona el mes...</option>
                         {availableMonthsForWorker.map(m => <option key={m} value={m}>{m}</option>)}
                       </select>
                     )}
                     {filterType === "week" && (
-                      <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-slate-900 text-xs font-bold focus:outline-none">
+                      <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className={`border rounded-2xl px-4 py-3 text-xs font-bold focus:outline-none ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}>
                         <option value="">Selecciona la semana...</option>
                         {availableWeeksForWorker.map(w => <option key={w} value={w}>{w}</option>)}
                       </select>
@@ -768,11 +846,11 @@ export default function App() {
                   </div>
 
                   {loading ? (
-                    <div className="py-12 flex justify-center"><span className="text-slate-600 text-sm font-bold">Cargando registros...</span></div>
+                    <div className="py-12 flex justify-center"><span className="text-sm font-bold opacity-75">Cargando registros...</span></div>
                   ) : filteredRecords.length === 0 ? (
-                    <div className="py-12 flex justify-center"><span className="text-slate-600 text-sm font-bold">No se encontraron registros.</span></div>
+                    <div className="py-12 flex justify-center"><span className="text-sm font-bold opacity-75">No se encontraron registros.</span></div>
                   ) : (
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <div className={`overflow-x-auto rounded-2xl border ${darkMode ? "border-slate-800" : "border-slate-200"}`}>
                       <table className="w-full text-left min-w-[650px]">
                         <thead>
                           <tr className="bg-blue-600 text-white text-[11px] font-black uppercase tracking-wider">
@@ -785,23 +863,23 @@ export default function App() {
                             {!isReadOnly && <th className="py-4 px-4 text-right print:hidden">Acciones</th>}
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-200 text-xs font-bold text-slate-900">
+                        <tbody className={`divide-y text-xs font-bold ${darkMode ? "divide-slate-800 text-slate-200" : "divide-slate-200 text-slate-900"}`}>
                           {currentRecords.map((rec) => (
-                            <tr key={rec.id} className="hover:bg-slate-50 transition-colors">
-                              <td className="py-4 px-4 font-black text-slate-950">{rec.worker_name || rec.trabajador}</td>
-                              <td className="py-4 px-4 text-slate-800">{rec.work_date || rec.fecha}</td>
-                              <td className="py-4 px-4 text-slate-700">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
+                            <tr key={rec.id} className={`transition-colors ${darkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}>
+                              <td className="py-4 px-4 font-black">{rec.worker_name || rec.trabajador}</td>
+                              <td className="py-4 px-4 opacity-90">{rec.work_date || rec.fecha}</td>
+                              <td className="py-4 px-4 opacity-80">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
                               <td className="py-4 px-4">
                                 <span className="inline-block min-w-[85px] text-center bg-blue-100 text-blue-900 px-3 py-1.5 rounded-xl font-black shadow-sm">
                                   {Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs
                                 </span>
                               </td>
-                              <td className="py-4 px-4 text-slate-700">{rec.cost_center || rec.centro_costo || "-"}</td>
-                              <td className="py-4 px-4 text-slate-700 max-w-[130px] truncate">{rec.description || rec.descripcion || "-"}</td>
+                              <td className="py-4 px-4 opacity-80">{rec.cost_center || rec.centro_costo || "-"}</td>
+                              <td className="py-4 px-4 opacity-80 max-w-[130px] truncate">{rec.description || rec.descripcion || "-"}</td>
                               {!isReadOnly && (
                                 <td className="py-4 px-4 text-right space-x-3 print:hidden whitespace-nowrap">
-                                  <button onClick={() => handleEdit(rec)} className="text-blue-700 hover:underline font-black">Editar</button>
-                                  <button onClick={() => handleDelete(rec.id)} className="text-red-600 hover:underline font-black">Borrar</button>
+                                  <button onClick={() => handleEdit(rec)} className="text-blue-500 hover:underline font-black">Editar</button>
+                                  <button onClick={() => handleDelete(rec.id)} className="text-red-500 hover:underline font-black">Borrar</button>
                                 </td>
                               )}
                             </tr>
@@ -813,14 +891,14 @@ export default function App() {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-between border-t border-slate-200 pt-4 mt-6 print:hidden">
-                    <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-black text-slate-800 disabled:opacity-40">
+                  <div className={`flex items-center justify-between border-t pt-4 mt-6 print:hidden ${darkMode ? "border-slate-800" : "border-slate-200"}`}>
+                    <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2 bg-slate-100 text-slate-900 rounded-xl text-xs font-black disabled:opacity-40">
                       ← Anterior
                     </button>
-                    <span className="text-xs text-slate-800 font-bold">
+                    <span className="text-xs font-bold opacity-80">
                       Página {currentPage} de {totalPages}
                     </span>
-                    <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-black text-slate-800 disabled:opacity-40">
+                    <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-4 py-2 bg-slate-100 text-slate-900 rounded-xl text-xs font-black disabled:opacity-40">
                       Siguiente →
                     </button>
                   </div>
@@ -829,28 +907,22 @@ export default function App() {
             </div>
           ) : currentTab === "empleados" && !isReadOnly ? (
             <div className="space-y-6 max-w-4xl mx-auto">
-              <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm">
-                <h2 className="text-lg font-black text-slate-900 mb-1">Crear Acceso para Empleado</h2>
-                <p className="text-xs text-slate-600 mb-6 font-bold">Genera una cuenta de solo visualización asociada a la cédula.</p>
-
-                {empSuccessMsg && (
-                  <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-2xl text-blue-800 text-xs font-black text-center">
-                    {empSuccessMsg}
-                  </div>
-                )}
+              <div className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-6 sm:p-8 rounded-[2rem] shadow-sm`}>
+                <h2 className="text-lg font-black mb-1">Crear Acceso para Empleado</h2>
+                <p className="text-xs mb-6 font-bold opacity-75">Genera una cuenta de solo visualización asociada a la cédula.</p>
 
                 <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                   <div>
-                    <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Usuario</label>
-                    <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold" placeholder="Ej. juan" />
+                    <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Usuario</label>
+                    <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} placeholder="Ej. juan" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Contraseña</label>
-                    <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold" placeholder="••••••••" />
+                    <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Contraseña</label>
+                    <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} placeholder="••••••••" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Cédula</label>
-                    <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold" placeholder="17000000" />
+                    <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Cédula</label>
+                    <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} placeholder="17000000" />
                   </div>
                   <div className="md:col-span-3">
                     <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/30">
@@ -860,10 +932,10 @@ export default function App() {
                 </form>
               </div>
 
-              <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm">
-                <h2 className="text-lg font-black text-slate-900 mb-4">Directorio de Usuarios</h2>
+              <div className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-6 sm:p-8 rounded-[2rem] shadow-sm`}>
+                <h2 className="text-lg font-black mb-4">Directorio de Usuarios</h2>
                 {usersList.length === 0 ? (
-                  <div className="py-8 flex justify-center"><span className="text-slate-600 text-sm font-bold">No hay usuarios cargados.</span></div>
+                  <div className="py-8 flex justify-center"><span className="text-sm font-bold opacity-75">No hay usuarios cargados.</span></div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[500px]">
@@ -876,19 +948,19 @@ export default function App() {
                           <th className="py-3 px-3 text-right">Acciones</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200 text-xs font-bold text-slate-900">
+                      <tbody className={`divide-y text-xs font-bold ${darkMode ? "divide-slate-800 text-slate-200" : "divide-slate-200 text-slate-900"}`}>
                         {usersList.map((u) => (
-                          <tr key={u.id} className="hover:bg-slate-50">
-                            <td className="py-3.5 px-3 text-slate-600">#{u.id}</td>
-                            <td className="py-3.5 px-3 font-black text-slate-950">{u.username}</td>
+                          <tr key={u.id} className={`hover:bg-slate-800/30`}>
+                            <td className="py-3.5 px-3 opacity-75">#{u.id}</td>
+                            <td className="py-3.5 px-3 font-black">{u.username}</td>
                             <td className="py-3.5 px-3">
                               <span className={`px-3 py-1 rounded-xl font-black ${u.role === 'admin' ? 'bg-indigo-100 text-indigo-900' : 'bg-blue-100 text-blue-900'}`}>
                                 {u.role === 'admin' ? 'Admin' : 'Empleado'}
                               </span>
                             </td>
-                            <td className="py-3.5 px-3 font-mono text-slate-800">{u.cedula || "-"}</td>
+                            <td className="py-3.5 px-3 font-mono opacity-80">{u.cedula || "-"}</td>
                             <td className="py-3.5 px-3 text-right">
-                              <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-red-600 font-black hover:underline">Eliminar</button>
+                              <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-red-500 font-black hover:underline">Eliminar</button>
                             </td>
                           </tr>
                         ))}
@@ -900,20 +972,20 @@ export default function App() {
             </div>
           ) : currentTab === "perfil" ? (
             <div className="space-y-6 max-w-2xl mx-auto">
-              <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm">
+              <div className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-8 rounded-[2rem] shadow-sm`}>
                 <div className="flex items-center gap-4 mb-6">
                   <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl shadow-lg">
                     {(currentUsername || userRole).charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-slate-900">{currentUsername || "Usuario"}</h2>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-0.5">Rol: {userRole === 'admin' ? 'Administrador' : 'Empleado'}</p>
+                    <h2 className="text-xl font-black">{currentUsername || "Usuario"}</h2>
+                    <p className="text-xs font-bold uppercase tracking-wider mt-0.5 opacity-75">Rol: {userRole === 'admin' ? 'Administrador' : 'Empleado'}</p>
                   </div>
                 </div>
 
-                <hr className="border-slate-100 my-6" />
+                <hr className={`my-6 ${darkMode ? "border-slate-800" : "border-slate-100"}`} />
 
-                <h3 className="text-base font-black text-slate-900 mb-4">Cambiar Contraseña</h3>
+                <h3 className="text-base font-black mb-4">Cambiar Contraseña</h3>
 
                 {profileMsg && (
                   <div className={`mb-4 p-3 rounded-2xl text-xs font-black text-center ${profileMsg.includes("éxito") ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-200"}`}>
@@ -923,12 +995,12 @@ export default function App() {
 
                 <form onSubmit={handleUpdatePassword} className="space-y-4">
                   <div>
-                    <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Contraseña Actual</label>
-                    <input type="password" required value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold" placeholder="••••••••" />
+                    <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Contraseña Actual</label>
+                    <input type="password" required value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} placeholder="••••••••" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Nueva Contraseña</label>
-                    <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold" placeholder="••••••••" />
+                    <label className="block text-[11px] font-black uppercase mb-1 opacity-80">Nueva Contraseña</label>
+                    <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className={`w-full border rounded-2xl px-4 py-3 text-sm font-bold ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`} placeholder="••••••••" />
                   </div>
                   <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/30">
                     Actualizar Contraseña
@@ -939,46 +1011,46 @@ export default function App() {
           ) : (
             <div className="space-y-6 max-w-5xl mx-auto">
               
-              <div className="bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm flex items-center justify-between">
+              <div className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-6 rounded-[2rem] shadow-sm flex items-center justify-between`}>
                 <div>
-                  <h3 className="text-slate-900 font-black text-lg">Resumen y Analíticas</h3>
+                  <h3 className="font-black text-lg">Resumen y Analíticas</h3>
                 </div>
-                <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-50 border border-slate-300 rounded-2xl px-4 py-2.5 text-slate-900 text-xs font-bold focus:outline-none">
+                <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className={`border rounded-2xl px-4 py-2.5 text-xs font-bold focus:outline-none ${darkMode ? "bg-slate-900 border-slate-700 text-white" : "bg-slate-50 border-slate-300 text-slate-900"}`}>
                   <option value="all">Todos los meses (Histórico)</option>
                   {availableMonths.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm flex items-center justify-between">
+                <div className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-8 rounded-[2rem] shadow-sm flex items-center justify-between`}>
                   <div>
-                    <p className="text-slate-600 text-xs font-black uppercase">Total Horas</p>
-                    <h3 className="text-4xl font-black text-slate-900 mt-1">{totalHorasStats.toFixed(1)} <span className="text-xl text-slate-600 font-bold">hrs</span></h3>
+                    <p className="text-xs font-black uppercase opacity-75">Total Horas</p>
+                    <h3 className="text-4xl font-black mt-1">{totalHorasStats.toFixed(1)} <span className="text-xl font-bold opacity-75">hrs</span></h3>
                   </div>
                   <div className="px-3.5 py-1.5 bg-blue-100 text-blue-900 rounded-xl text-xs font-black">+18.5%</div>
                 </div>
 
-                <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm flex items-center justify-between">
+                <div className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-8 rounded-[2rem] shadow-sm flex items-center justify-between`}>
                   <div>
-                    <p className="text-slate-600 text-xs font-black uppercase">Total Jornadas</p>
-                    <h3 className="text-4xl font-black text-slate-900 mt-1">{recordsForStats.length}</h3>
+                    <p className="text-xs font-black uppercase opacity-75">Total Jornadas</p>
+                    <h3 className="text-4xl font-black mt-1">{recordsForStats.length}</h3>
                   </div>
                   <div className="px-3.5 py-1.5 bg-blue-100 text-blue-900 rounded-xl text-xs font-black">Activo</div>
                 </div>
               </div>
 
-              <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm">
-                <h3 className="text-slate-900 font-black text-lg mb-6">Estadísticas por Trabajador</h3>
+              <div className={`${darkMode ? "bg-[#1E293B] border-slate-800 text-white" : "bg-white border-slate-200 text-slate-900"} border p-8 rounded-[2rem] shadow-sm`}>
+                <h3 className="font-black text-lg mb-6">Estadísticas por Trabajador</h3>
                 {chartData.length === 0 ? (
-                  <div className="py-12 flex justify-center"><span className="text-slate-600 text-sm font-bold">No hay datos suficientes para graficar.</span></div>
+                  <div className="py-12 flex justify-center"><span className="text-sm font-bold opacity-75">No hay datos suficientes para graficar.</span></div>
                 ) : (
                   <div className="w-full h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={chartData} margin={{ top: 10, right: 30, left: -20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" vertical={false} />
-                        <XAxis dataKey="name" stroke="#334155" fontSize={11} fontWeight={800} tickLine={false} axisLine={false} />
-                        <YAxis stroke="#334155" fontSize={11} fontWeight={800} tickLine={false} axisLine={false} />
-                        <Tooltip contentStyle={{ backgroundColor: "#ffffff", borderColor: "#94a3b8", borderRadius: "16px", color: "#0f172a", fontSize: "12px", fontWeight: "bold", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }} />
+                        <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "#334155" : "#cbd5e1"} vertical={false} />
+                        <XAxis dataKey="name" stroke={darkMode ? "#94a3b8" : "#334155"} fontSize={11} fontWeight={800} tickLine={false} axisLine={false} />
+                        <YAxis stroke={darkMode ? "#94a3b8" : "#334155"} fontSize={11} fontWeight={800} tickLine={false} axisLine={false} />
+                        <Tooltip contentStyle={{ backgroundColor: darkMode ? "#0F172A" : "#ffffff", borderColor: darkMode ? "#334155" : "#94a3b8", borderRadius: "16px", color: darkMode ? "#ffffff" : "#0f172a", fontSize: "12px", fontWeight: "bold", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }} />
                         <Bar dataKey="horas" fill="#2563EB" radius={[10, 10, 0, 0]} barSize={40} />
                       </BarChart>
                     </ResponsiveContainer>
