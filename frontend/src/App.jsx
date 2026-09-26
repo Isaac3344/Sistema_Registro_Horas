@@ -344,7 +344,7 @@ export default function App() {
         <div className="bg-white shadow-[0_20px_40px_rgba(0,0,0,0.2)] border border-slate-100 p-8 sm:p-10 rounded-[2.5rem] w-full max-w-md">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-600/30">
-              F
+              J
             </div>
             <span className="font-extrabold text-slate-900 text-lg tracking-tight">JornadaPro</span>
           </div>
@@ -432,16 +432,16 @@ export default function App() {
     );
   }
 
-  // ----- PLATAFORMA PRINCIPAL (RESPONSIVE + SIDEBAR FIJO) -----
+  // ----- PLATAFORMA PRINCIPAL -----
   return (
     <div className="min-h-screen bg-[#f1f5f9] text-slate-900 flex flex-col md:flex-row font-sans">
       
-      {/* Menú Lateral Fijo en pantallas medianas y grandes */}
+      {/* Menú Lateral Fijo */}
       <aside className="w-full md:w-72 bg-[#0F172A] text-white p-6 md:sticky md:top-0 md:h-screen flex flex-col justify-between shrink-0 print:hidden shadow-xl z-50">
         <div>
           <div className="flex items-center gap-3 mb-6 md:mb-10">
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-600/40">
-              F
+              J
             </div>
             <span className="font-black text-xl tracking-tight text-white">JornadaPro</span>
           </div>
@@ -555,7 +555,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* Historial de Registros - Cabecera Azul de Alto Contraste */}
+              {/* Historial de Registros */}
               <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-white border border-slate-200 p-4 sm:p-8 rounded-[2rem] shadow-sm flex flex-col justify-between`}>
                 <div>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
@@ -602,7 +602,6 @@ export default function App() {
                     <div className="overflow-x-auto rounded-2xl border border-slate-200">
                       <table className="w-full text-left min-w-[650px]">
                         <thead>
-                          {/* CABECERA AZUL SÓLIDA PARA MÁXIMA LEGIBILIDAD */}
                           <tr className="bg-blue-600 text-white text-[11px] font-black uppercase tracking-wider">
                             <th className="py-4 px-4">Trabajador</th>
                             <th className="py-4 px-4">Fecha</th>
@@ -688,7 +687,7 @@ export default function App() {
                 </form>
               </div>
 
-              {/* Directorio de Usuarios - Cabecera Azul */}
+              {/* Directorio de Usuarios */}
               <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm">
                 <h2 className="text-lg font-black text-slate-900 mb-4">Directorio de Usuarios</h2>
                 {usersList.length === 0 ? (
