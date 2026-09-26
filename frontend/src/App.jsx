@@ -346,7 +346,7 @@ export default function App() {
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-600/30">
               F
             </div>
-            <span className="font-extrabold text-slate-900 text-lg tracking-tight">Fingoals</span>
+            <span className="font-extrabold text-slate-900 text-lg tracking-tight">JornadaPro</span>
           </div>
 
           <div className="mb-8">
@@ -443,7 +443,7 @@ export default function App() {
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-600/40">
               F
             </div>
-            <span className="font-black text-xl tracking-tight text-white">Fingoals</span>
+            <span className="font-black text-xl tracking-tight text-white">JornadaPro</span>
           </div>
 
           <p className="text-[11px] uppercase tracking-wider text-slate-300 font-bold mb-3">Menú Principal</p>
