@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { 
   fetchRecords, 
   createRecord, 
@@ -313,10 +313,10 @@ export default function App() {
     });
     aoa.push(["", "", "", "", "TOTAL HORAS:", totalHorasSuma, "", ""]);
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
-    const headerStyle = { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4e65ff" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const titleStyle = { font: { name: "Arial", sz: 12, bold: true, color: { rgb: "334155" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const headerStyle = { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1D4ED8" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const titleStyle = { font: { name: "Arial", sz: 12, bold: true, color: { rgb: "0A2540" } }, alignment: { horizontal: "center", vertical: "center" } };
     const cellStyle = { font: { name: "Arial", sz: 9 }, alignment: { vertical: "center" } };
-    const totalStyle = { font: { name: "Arial", sz: 10, bold: true }, fill: { fgColor: { rgb: "e0e5ec" } }, alignment: { horizontal: "right", vertical: "center" } };
+    const totalStyle = { font: { name: "Arial", sz: 10, bold: true }, fill: { fgColor: { rgb: "E0F2FE" } }, alignment: { horizontal: "right", vertical: "center" } };
 
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -337,28 +337,25 @@ export default function App() {
 
   const handleExportPDF = () => window.print();
 
-  // ----- PANTALLA DE LOGIN (NEUMORFISMO) -----
+  // ----- PANTALLA DE LOGIN (NEUMORFISMO + PALETA PERSONALIZADA) -----
   if (!token) {
     return (
-      <div className="min-h-screen bg-[#e0e5ec] flex items-center justify-center p-4 font-sans text-slate-700 selection:bg-blue-500/30">
+      <div className="min-h-screen bg-[#F1F5F9] flex items-center justify-center p-4 font-sans text-[#0A2540] selection:bg-[#60A5FA]/30">
         
-        {/* Tarjeta Neumórfica de Login */}
-        <div className="bg-[#e0e5ec] shadow-[12px_12px_24px_#a3b1c6,-12px_-12px_24px_#ffffff] p-10 rounded-[2.5rem] w-full max-w-md">
-          
+        <div className="bg-[#F1F5F9] shadow-[12px_12px_24px_#d1d9e6,-12px_-12px_24px_#ffffff] p-10 rounded-[2.5rem] w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-light text-slate-700 tracking-tight">Bienvenido</h1>
-            <p className="text-slate-500 text-sm mt-2 font-medium">Plataforma Segura</p>
+            <h1 className="text-3xl font-light text-[#0A2540] tracking-tight">Bienvenido</h1>
+            <p className="text-[#0A2540]/60 text-sm mt-2 font-medium">Plataforma Segura</p>
           </div>
 
-          {/* Toggle Neumórfico de Roles */}
-          <div className="flex bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] p-1.5 rounded-2xl mb-8">
+          <div className="flex bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] p-1.5 rounded-2xl mb-8">
             <button
               type="button"
               onClick={() => setLoginRoleType("admin")}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
                 loginRoleType === "admin" 
-                  ? "bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] text-blue-600" 
-                  : "text-slate-400 hover:text-slate-600"
+                  ? "bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] text-[#1D4ED8]" 
+                  : "text-[#0A2540]/50 hover:text-[#0A2540]"
               }`}
             >
               Administrador
@@ -368,8 +365,8 @@ export default function App() {
               onClick={() => setLoginRoleType("employee")}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
                 loginRoleType === "employee" 
-                  ? "bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] text-blue-600" 
-                  : "text-slate-400 hover:text-slate-600"
+                  ? "bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] text-[#1D4ED8]" 
+                  : "text-[#0A2540]/50 hover:text-[#0A2540]"
               }`}
             >
               Empleado
@@ -389,7 +386,7 @@ export default function App() {
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-[#e0e5ec] shadow-[inset_6px_6px_10px_#a3b1c6,inset_-6px_-6px_10px_#ffffff] rounded-2xl px-5 py-4 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-slate-400"
+                className="w-full bg-[#F1F5F9] shadow-[inset_6px_6px_10px_#d1d9e6,inset_-6px_-6px_10px_#ffffff] rounded-2xl px-5 py-4 text-sm text-[#0A2540] font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#0A2540]/40"
                 placeholder="Usuario"
               />
             </div>
@@ -400,7 +397,7 @@ export default function App() {
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-[#e0e5ec] shadow-[inset_6px_6px_10px_#a3b1c6,inset_-6px_-6px_10px_#ffffff] rounded-2xl px-5 py-4 text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-slate-400"
+                className="w-full bg-[#F1F5F9] shadow-[inset_6px_6px_10px_#d1d9e6,inset_-6px_-6px_10px_#ffffff] rounded-2xl px-5 py-4 text-sm text-[#0A2540] font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#0A2540]/40"
                 placeholder="Contraseña"
               />
             </div>
@@ -412,7 +409,7 @@ export default function App() {
                   required
                   value={adminTokenInput}
                   onChange={(e) => setAdminTokenInput(e.target.value)}
-                  className="w-full bg-[#e0e5ec] shadow-[inset_6px_6px_10px_#a3b1c6,inset_-6px_-6px_10px_#ffffff] rounded-2xl px-5 py-4 text-sm text-blue-600 font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-blue-300"
+                  className="w-full bg-[#F1F5F9] shadow-[inset_6px_6px_10px_#d1d9e6,inset_-6px_-6px_10px_#ffffff] rounded-2xl px-5 py-4 text-sm text-[#1D4ED8] font-medium focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]/50 border-none transition-all placeholder:text-[#1D4ED8]/50"
                   placeholder="Token de Seguridad"
                 />
               </div>
@@ -420,7 +417,7 @@ export default function App() {
 
             <button
               type="submit"
-              className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500 shadow-[6px_6px_12px_#a3b1c6,-6px_-6px_12px_#ffffff] text-white font-bold py-4 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2)] transition-all duration-200 text-sm"
+              className="w-full mt-4 bg-gradient-to-r from-[#1D4ED8] to-[#60A5FA] shadow-[6px_6px_12px_#d1d9e6,-6px_-6px_12px_#ffffff] text-white font-bold py-4 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2)] transition-all duration-200 text-sm"
             >
               Sign Up / Iniciar
             </button>
@@ -430,45 +427,43 @@ export default function App() {
     );
   }
 
-  // ----- PLATAFORMA PRINCIPAL (NEUMORFISMO) -----
+  // ----- PLATAFORMA PRINCIPAL (NEUMORFISMO + PALETA PERSONALIZADA) -----
   return (
-    <div className="min-h-screen bg-[#e0e5ec] text-slate-700 flex flex-col font-sans selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[#F1F5F9] text-[#0A2540] flex flex-col font-sans selection:bg-[#60A5FA]/30">
       
-      {/* Header Tipo Isla Neumórfica */}
-      <header className="mx-4 sm:mx-8 mt-6 bg-[#e0e5ec] shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] rounded-3xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 z-40 print:hidden">
+      <header className="mx-4 sm:mx-8 mt-6 bg-[#F1F5F9] shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] rounded-3xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 z-40 print:hidden">
         <div className="flex items-center justify-between w-full md:w-auto">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] rounded-2xl flex items-center justify-center text-blue-600 font-extrabold text-lg">
+            <div className="w-12 h-12 bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] rounded-2xl flex items-center justify-center text-[#1D4ED8] font-extrabold text-lg">
               AR
             </div>
             <div>
-              <h1 className="font-bold text-slate-700 text-lg tracking-tight">App Registro</h1>
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
+              <h1 className="font-bold text-[#0A2540] text-lg tracking-tight">App Registro</h1>
+              <p className="text-[11px] font-semibold text-[#0A2540]/50 uppercase tracking-widest mt-0.5">
                 {isReadOnly ? "Modo Empleado" : "Administrador"}
               </p>
             </div>
           </div>
-          <button onClick={handleLogout} className="md:hidden bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] text-red-500 px-4 py-2 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#a3b1c6,inset_-2px_-2px_4px_#ffffff]">
+          <button onClick={handleLogout} className="md:hidden bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] text-red-500 px-4 py-2 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#d1d9e6,inset_-2px_-2px_4px_#ffffff]">
             Salir
           </button>
         </div>
 
-        {/* Navegación Neumórfica */}
-        <div className="flex items-center bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] p-1.5 rounded-2xl w-full md:w-auto overflow-x-auto gap-1">
-          <button onClick={() => setCurrentTab("gestion")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "gestion" ? "bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] text-blue-600" : "text-slate-400 hover:text-slate-600"}`}>
+        <div className="flex items-center bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] p-1.5 rounded-2xl w-full md:w-auto overflow-x-auto gap-1">
+          <button onClick={() => setCurrentTab("gestion")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "gestion" ? "bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] text-[#1D4ED8]" : "text-[#0A2540]/50 hover:text-[#0A2540]"}`}>
             Gestión
           </button>
-          <button onClick={() => setCurrentTab("estadisticas")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "estadisticas" ? "bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] text-blue-600" : "text-slate-400 hover:text-slate-600"}`}>
+          <button onClick={() => setCurrentTab("estadisticas")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "estadisticas" ? "bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] text-[#1D4ED8]" : "text-[#0A2540]/50 hover:text-[#0A2540]"}`}>
             Estadísticas
           </button>
           {!isReadOnly && (
-            <button onClick={() => setCurrentTab("empleados")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "empleados" ? "bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] text-blue-600" : "text-slate-400 hover:text-slate-600"}`}>
+            <button onClick={() => setCurrentTab("empleados")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "empleados" ? "bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] text-[#1D4ED8]" : "text-[#0A2540]/50 hover:text-[#0A2540]"}`}>
               Accesos
             </button>
           )}
         </div>
 
-        <button onClick={handleLogout} className="hidden md:block bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] hover:text-red-500 text-slate-500 px-5 py-3 rounded-2xl text-xs font-bold transition-all active:shadow-[inset_2px_2px_4px_#a3b1c6,inset_-2px_-2px_4px_#ffffff]">
+        <button onClick={handleLogout} className="hidden md:block bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] hover:text-red-500 text-[#0A2540]/60 px-5 py-3 rounded-2xl text-xs font-bold transition-all active:shadow-[inset_2px_2px_4px_#d1d9e6,inset_-2px_-2px_4px_#ffffff]">
           Cerrar Sesión
         </button>
       </header>
@@ -477,80 +472,77 @@ export default function App() {
         {currentTab === "gestion" ? (
           <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-8`}>
             
-            {/* Panel Izquierdo: Formulario */}
             {!isReadOnly && (
-              <div className="bg-[#e0e5ec] shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] p-8 rounded-[2rem] h-fit print:hidden">
+              <div className="bg-[#F1F5F9] shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] p-8 rounded-[2rem] h-fit print:hidden">
                 <div className="flex justify-between items-center mb-8">
-                  <h2 className="font-bold text-slate-700 text-lg">
+                  <h2 className="font-bold text-[#0A2540] text-lg">
                     {editingId ? "Editar Registro" : "Nuevo Registro"}
                   </h2>
-                  <span className="text-blue-600 bg-[#e0e5ec] shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] px-4 py-2 rounded-xl text-xs font-bold">
+                  <span className="text-[#1D4ED8] bg-[#E0F2FE] shadow-[inset_2px_2px_4px_#b9dcf2,inset_-2px_-2px_4px_#ffffff] px-4 py-2 rounded-xl text-xs font-bold">
                     {calculatedHours.toFixed(2)} hrs
                   </span>
                 </div>
 
                 <form onSubmit={handleSubmitRecord} className="space-y-6">
                   <div>
-                    <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-slate-400" placeholder="Nombre del trabajador *" />
+                    <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#0A2540]/40" placeholder="Nombre del trabajador *" />
                   </div>
                   <div>
-                    <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all" />
+                    <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all" />
                   </div>
                   <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all" />
+                      <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all" />
                     </div>
                     <div>
-                      <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all" />
+                      <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all" />
                     </div>
                   </div>
                   <div>
-                    <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-slate-400" placeholder="Cédula / CC *" />
+                    <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#0A2540]/40" placeholder="Cédula / CC *" />
                   </div>
                   <div>
-                    <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-slate-400 resize-none" placeholder="Descripción opcional..."></textarea>
+                    <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#0A2540]/40 resize-none" placeholder="Descripción opcional..."></textarea>
                   </div>
-                  <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[6px_6px_12px_#a3b1c6,-6px_-6px_12px_#ffffff] text-white font-bold py-4 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2)] transition-all duration-200 text-sm mt-4">
+                  <button type="submit" className="w-full bg-gradient-to-r from-[#1D4ED8] to-[#60A5FA] shadow-[6px_6px_12px_#d1d9e6,-6px_-6px_12px_#ffffff] text-white font-bold py-4 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2)] transition-all duration-200 text-sm mt-4">
                     {editingId ? "Actualizar" : "Agregar (+)"}
                   </button>
                 </form>
               </div>
             )}
 
-            {/* Panel Derecho: Historial */}
-            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-[#e0e5ec] shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] p-6 sm:p-8 rounded-[2rem] flex flex-col justify-between`}>
+            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-[#F1F5F9] shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] p-6 sm:p-8 rounded-[2rem] flex flex-col justify-between`}>
               <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 print:hidden">
-                  <h2 className="font-bold text-slate-700 text-lg">Historial de Registros</h2>
+                  <h2 className="font-bold text-[#0A2540] text-lg">Historial de Registros</h2>
                   <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-                    <button onClick={handleExportExcel} className="bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] text-blue-600 px-5 py-2.5 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#a3b1c6,inset_-2px_-2px_4px_#ffffff] transition-all">
+                    <button onClick={handleExportExcel} className="bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] text-[#1D4ED8] px-5 py-2.5 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#d1d9e6,inset_-2px_-2px_4px_#ffffff] transition-all">
                       Descargar
                     </button>
-                    <button onClick={handleExportPDF} className="bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] text-slate-600 px-5 py-2.5 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#a3b1c6,inset_-2px_-2px_4px_#ffffff] transition-all">
+                    <button onClick={handleExportPDF} className="bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] text-[#0A2540]/70 px-5 py-2.5 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#d1d9e6,inset_-2px_-2px_4px_#ffffff] transition-all">
                       Imprimir
                     </button>
                   </div>
                 </div>
 
-                {/* Filtros Neumórficos */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8 print:hidden">
-                  <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-4 py-3.5 text-slate-600 text-xs font-bold focus:outline-none border-none">
-                    <option value="all">Select Category (Todos)</option>
+                  <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-4 py-3.5 text-[#0A2540]/80 text-xs font-bold focus:outline-none border-none">
+                    <option value="all">Categoría (Todos)</option>
                     {uniqueWorkers.map(w => <option key={w} value={w}>{w}</option>)}
                   </select>
-                  <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-4 py-3.5 text-slate-600 text-xs font-bold focus:outline-none border-none">
+                  <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-4 py-3.5 text-[#0A2540]/80 text-xs font-bold focus:outline-none border-none">
                     <option value="all">Filtro de Tiempo</option>
                     <option value="month">Por Mes</option>
                     <option value="week">Por Semana</option>
                   </select>
                   {filterType === "month" && (
-                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-4 py-3.5 text-slate-600 text-xs font-bold focus:outline-none border-none">
+                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-4 py-3.5 text-[#0A2540]/80 text-xs font-bold focus:outline-none border-none">
                       <option value="">Selecciona el mes...</option>
                       {availableMonthsForWorker.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   )}
                   {filterType === "week" && (
-                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-4 py-3.5 text-slate-600 text-xs font-bold focus:outline-none border-none">
+                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-4 py-3.5 text-[#0A2540]/80 text-xs font-bold focus:outline-none border-none">
                       <option value="">Selecciona la semana...</option>
                       {availableWeeksForWorker.map(w => <option key={w} value={w}>{w}</option>)}
                     </select>
@@ -558,14 +550,14 @@ export default function App() {
                 </div>
 
                 {loading ? (
-                  <div className="py-16 flex justify-center"><span className="text-slate-400 text-sm font-bold">Cargando...</span></div>
+                  <div className="py-16 flex justify-center"><span className="text-[#0A2540]/50 text-sm font-bold">Cargando...</span></div>
                 ) : filteredRecords.length === 0 ? (
-                  <div className="py-16 flex justify-center"><span className="text-slate-400 text-sm font-bold">No se encontraron resultados.</span></div>
+                  <div className="py-16 flex justify-center"><span className="text-[#0A2540]/50 text-sm font-bold">No se encontraron resultados.</span></div>
                 ) : (
-                  <div className="overflow-x-auto rounded-2xl shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] p-2">
+                  <div className="overflow-x-auto rounded-2xl shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] p-2">
                     <table className="w-full text-left min-w-[700px]">
                       <thead>
-                        <tr className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                        <tr className="text-[#0A2540]/60 text-[10px] font-bold uppercase tracking-widest">
                           <th className="py-4 px-5">Trabajador</th>
                           <th className="py-4 px-5">Fecha</th>
                           <th className="py-4 px-5">Horario</th>
@@ -575,19 +567,19 @@ export default function App() {
                           {!isReadOnly && <th className="py-4 px-5 text-right print:hidden">Acciones</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#c3c8d3]/50 text-sm font-medium text-slate-600">
+                      <tbody className="divide-y divide-[#d1d9e6]/50 text-sm font-medium text-[#0A2540]/80">
                         {currentRecords.map((rec) => (
-                          <tr key={rec.id} className="hover:bg-[#e6eaf0] transition-colors">
-                            <td className="py-4 px-5 text-slate-800 font-bold">{rec.worker_name || rec.trabajador}</td>
+                          <tr key={rec.id} className="hover:bg-[#E0F2FE]/50 transition-colors">
+                            <td className="py-4 px-5 text-[#0A2540] font-bold">{rec.worker_name || rec.trabajador}</td>
                             <td className="py-4 px-5">{rec.work_date || rec.fecha}</td>
                             <td className="py-4 px-5 text-xs">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
-                            <td className="py-4 px-5"><span className="bg-[#e0e5ec] shadow-[2px_2px_4px_#a3b1c6,-2px_-2px_4px_#ffffff] text-blue-600 px-3 py-1.5 rounded-lg font-bold text-xs">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)}</span></td>
+                            <td className="py-4 px-5"><span className="bg-[#E0F2FE] shadow-[2px_2px_4px_#b9dcf2,-2px_-2px_4px_#ffffff] text-[#1D4ED8] px-3 py-1.5 rounded-lg font-bold text-xs">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)}</span></td>
                             <td className="py-4 px-5 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
                             <td className="py-4 px-5 text-xs max-w-[150px] truncate">{rec.description || rec.descripcion || "-"}</td>
                             {!isReadOnly && (
                               <td className="py-4 px-5 text-right space-x-3 print:hidden whitespace-nowrap">
-                                <button onClick={() => handleEdit(rec)} className="text-slate-400 hover:text-blue-600 text-xs font-bold transition-all">Edit</button>
-                                <button onClick={() => handleDelete(rec.id)} className="text-slate-400 hover:text-red-500 text-xs font-bold transition-all">Del</button>
+                                <button onClick={() => handleEdit(rec)} className="text-[#0A2540]/50 hover:text-[#1D4ED8] text-xs font-bold transition-all">Edit</button>
+                                <button onClick={() => handleDelete(rec.id)} className="text-[#0A2540]/50 hover:text-red-500 text-xs font-bold transition-all">Del</button>
                               </td>
                             )}
                           </tr>
@@ -598,18 +590,17 @@ export default function App() {
                 )}
               </div>
 
-              {/* Paginación Neumórfica */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-8 print:hidden">
-                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] rounded-xl text-slate-500 hover:text-blue-600 disabled:opacity-40 active:shadow-[inset_2px_2px_4px_#a3b1c6,inset_-2px_-2px_4px_#ffffff] transition-all font-bold">
+                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] rounded-xl text-[#0A2540]/50 hover:text-[#1D4ED8] disabled:opacity-40 active:shadow-[inset_2px_2px_4px_#d1d9e6,inset_-2px_-2px_4px_#ffffff] transition-all font-bold">
                     ←
                   </button>
                   <div className="flex gap-2">
-                    <span className="w-10 h-10 flex items-center justify-center bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-xl text-blue-600 font-bold text-sm">
+                    <span className="w-10 h-10 flex items-center justify-center bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] rounded-xl text-[#1D4ED8] font-bold text-sm">
                       {currentPage}
                     </span>
                   </div>
-                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-[#e0e5ec] shadow-[4px_4px_8px_#a3b1c6,-4px_-4px_8px_#ffffff] rounded-xl text-slate-500 hover:text-blue-600 disabled:opacity-40 active:shadow-[inset_2px_2px_4px_#a3b1c6,inset_-2px_-2px_4px_#ffffff] transition-all font-bold">
+                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-[#F1F5F9] shadow-[4px_4px_8px_#d1d9e6,-4px_-4px_8px_#ffffff] rounded-xl text-[#0A2540]/50 hover:text-[#1D4ED8] disabled:opacity-40 active:shadow-[inset_2px_2px_4px_#d1d9e6,inset_-2px_-2px_4px_#ffffff] transition-all font-bold">
                     →
                   </button>
                 </div>
@@ -618,9 +609,9 @@ export default function App() {
           </div>
         ) : currentTab === "empleados" && !isReadOnly ? (
           <div className="space-y-8 max-w-4xl mx-auto">
-            <div className="bg-[#e0e5ec] shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] p-10 rounded-[2.5rem]">
-              <h2 className="text-xl font-bold text-slate-700 mb-2">Crear Acceso</h2>
-              <p className="text-sm text-slate-500 mb-8 font-medium">Configuración de cuentas</p>
+            <div className="bg-[#F1F5F9] shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] p-10 rounded-[2.5rem]">
+              <h2 className="text-xl font-bold text-[#0A2540] mb-2">Crear Acceso</h2>
+              <p className="text-sm text-[#0A2540]/60 mb-8 font-medium">Configuración de cuentas</p>
 
               {empSuccessMsg && (
                 <div className="mb-6 p-4 bg-green-100 shadow-[inset_2px_2px_4px_#bbf7d0,inset_-2px_-2px_4px_#f0fdf4] rounded-2xl text-green-600 text-sm text-center font-bold">
@@ -630,31 +621,31 @@ export default function App() {
 
               <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                 <div className="md:col-span-1">
-                  <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-slate-400" placeholder="Usuario" />
+                  <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#0A2540]/40" placeholder="Usuario" />
                 </div>
                 <div className="md:col-span-1">
-                  <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-slate-400" placeholder="Contraseña" />
+                  <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#0A2540]/40" placeholder="Contraseña" />
                 </div>
                 <div className="md:col-span-1">
-                  <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className="w-full bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-slate-700 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/50 border-none transition-all placeholder:text-slate-400" placeholder="Cédula" />
+                  <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className="w-full bg-[#F1F5F9] shadow-[inset_5px_5px_10px_#d1d9e6,inset_-5px_-5px_10px_#ffffff] rounded-2xl px-5 py-3.5 text-[#0A2540] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#0A2540]/40" placeholder="Cédula" />
                 </div>
                 <div className="md:col-span-1">
-                  <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-400 shadow-[6px_6px_12px_#a3b1c6,-6px_-6px_12px_#ffffff] text-white font-bold py-3.5 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2)] transition-all text-sm">
+                  <button type="submit" className="w-full bg-gradient-to-r from-[#1D4ED8] to-[#60A5FA] shadow-[6px_6px_12px_#d1d9e6,-6px_-6px_12px_#ffffff] text-white font-bold py-3.5 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.2)] transition-all text-sm">
                     Guardar
                   </button>
                 </div>
               </form>
             </div>
 
-            <div className="bg-[#e0e5ec] shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] p-10 rounded-[2.5rem]">
-              <h2 className="text-xl font-bold text-slate-700 mb-8">Directorio de Usuarios</h2>
+            <div className="bg-[#F1F5F9] shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] p-10 rounded-[2.5rem]">
+              <h2 className="text-xl font-bold text-[#0A2540] mb-8">Directorio de Usuarios</h2>
               {usersList.length === 0 ? (
-                <div className="py-12 flex justify-center"><span className="text-slate-400 text-sm font-bold">No hay usuarios cargados.</span></div>
+                <div className="py-12 flex justify-center"><span className="text-[#0A2540]/50 text-sm font-bold">No hay usuarios cargados.</span></div>
               ) : (
-                <div className="overflow-x-auto shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-2xl p-2">
+                <div className="overflow-x-auto shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] rounded-2xl p-2">
                   <table className="w-full text-left min-w-[500px]">
                     <thead>
-                      <tr className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                      <tr className="text-[#0A2540]/60 text-[10px] font-bold uppercase tracking-widest">
                         <th className="py-4 px-5">ID</th>
                         <th className="py-4 px-5">Usuario</th>
                         <th className="py-4 px-5">Rol</th>
@@ -662,19 +653,19 @@ export default function App() {
                         <th className="py-4 px-5 text-right">Settings</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#c3c8d3]/50 text-sm font-medium text-slate-600">
+                    <tbody className="divide-y divide-[#d1d9e6]/50 text-sm font-medium text-[#0A2540]/80">
                       {usersList.map((u) => (
-                        <tr key={u.id} className="hover:bg-[#e6eaf0] transition-colors">
+                        <tr key={u.id} className="hover:bg-[#E0F2FE]/50 transition-colors">
                           <td className="py-4 px-5">#{u.id}</td>
-                          <td className="py-4 px-5 text-slate-800 font-bold">{u.username}</td>
+                          <td className="py-4 px-5 text-[#0A2540] font-bold">{u.username}</td>
                           <td className="py-4 px-5">
-                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold shadow-[2px_2px_4px_#a3b1c6,-2px_-2px_4px_#ffffff] ${u.role === 'admin' ? 'bg-[#e0e5ec] text-blue-600' : 'bg-[#e0e5ec] text-slate-500'}`}>
+                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold shadow-[2px_2px_4px_#d1d9e6,-2px_-2px_4px_#ffffff] ${u.role === 'admin' ? 'bg-[#E0F2FE] text-[#1D4ED8]' : 'bg-[#F1F5F9] text-[#0A2540]/60'}`}>
                               {u.role === 'admin' ? 'Admin' : 'Empleado'}
                             </span>
                           </td>
                           <td className="py-4 px-5 font-mono text-xs">{u.cedula || "-"}</td>
                           <td className="py-4 px-5 text-right">
-                            <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-slate-400 hover:text-red-500 text-xs font-bold transition-all">
+                            <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-[#0A2540]/50 hover:text-red-500 text-xs font-bold transition-all">
                               Revocar
                             </button>
                           </td>
@@ -689,82 +680,78 @@ export default function App() {
         ) : (
           <div className="space-y-8 max-w-5xl mx-auto">
             
-            <div className="bg-[#e0e5ec] shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] p-6 rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="bg-[#F1F5F9] shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] p-6 rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div>
-                <h3 className="text-slate-700 font-bold text-lg">Analíticas</h3>
+                <h3 className="text-[#0A2540] font-bold text-lg">Analíticas</h3>
               </div>
-              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-5 py-3 text-slate-600 text-sm font-bold focus:outline-none border-none w-full sm:w-auto">
+              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] rounded-2xl px-5 py-3 text-[#0A2540]/80 text-sm font-bold focus:outline-none border-none w-full sm:w-auto">
                 <option value="all">Filtro Global</option>
                 {availableMonths.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              {/* Tarjeta de Estadística Neumórfica de la imagen */}
-              <div className="bg-[#e0e5ec] shadow-[12px_12px_24px_#a3b1c6,-12px_-12px_24px_#ffffff] p-10 rounded-[2.5rem] flex items-center justify-between">
+              <div className="bg-[#F1F5F9] shadow-[12px_12px_24px_#d1d9e6,-12px_-12px_24px_#ffffff] p-10 rounded-[2.5rem] flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest mb-3">LOREM IPSUM (Horas)</p>
-                  <h3 className="text-4xl font-extrabold text-slate-800 tracking-tight">
-                    ${totalHorasStats.toFixed(1)} <span className="text-xl text-slate-400 font-medium">hrs</span>
+                  <p className="text-[#0A2540]/50 text-[11px] font-bold uppercase tracking-widest mb-3">LOREM IPSUM (Horas)</p>
+                  <h3 className="text-4xl font-extrabold text-[#0A2540] tracking-tight">
+                    {totalHorasStats.toFixed(1)} <span className="text-xl text-[#0A2540]/40 font-medium">hrs</span>
                   </h3>
                 </div>
-                {/* Círculo Neumórfico Estilo Progress Bar de la imagen */}
-                <div className="w-24 h-24 rounded-full shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] flex items-center justify-center relative">
-                   <div className="absolute inset-0 rounded-full border-[6px] border-blue-500 border-l-transparent border-t-transparent opacity-80 transform rotate-45"></div>
-                   <div className="w-16 h-16 rounded-full bg-[#e0e5ec] shadow-[inset_4px_4px_8px_#a3b1c6,inset_-4px_-4px_8px_#ffffff] flex items-center justify-center">
-                     <span className="font-bold text-sm text-slate-700">75%</span>
+                <div className="w-24 h-24 rounded-full shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] flex items-center justify-center relative">
+                   <div className="absolute inset-0 rounded-full border-[6px] border-[#1D4ED8] border-l-transparent border-t-transparent opacity-80 transform rotate-45"></div>
+                   <div className="w-16 h-16 rounded-full bg-[#F1F5F9] shadow-[inset_4px_4px_8px_#d1d9e6,inset_-4px_-4px_8px_#ffffff] flex items-center justify-center">
+                     <span className="font-bold text-sm text-[#0A2540]">75%</span>
                    </div>
                 </div>
               </div>
 
-              <div className="bg-[#e0e5ec] shadow-[12px_12px_24px_#a3b1c6,-12px_-12px_24px_#ffffff] p-10 rounded-[2.5rem] flex items-center justify-between">
+              <div className="bg-[#F1F5F9] shadow-[12px_12px_24px_#d1d9e6,-12px_-12px_24px_#ffffff] p-10 rounded-[2.5rem] flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-[11px] font-bold uppercase tracking-widest mb-3">Jornadas Totales</p>
-                  <h3 className="text-4xl font-extrabold text-slate-800 tracking-tight">{recordsForStats.length}</h3>
+                  <p className="text-[#0A2540]/50 text-[11px] font-bold uppercase tracking-widest mb-3">Jornadas Totales</p>
+                  <h3 className="text-4xl font-extrabold text-[#0A2540] tracking-tight">{recordsForStats.length}</h3>
                 </div>
-                {/* Switch ON/OFF Estilo Neumórfico de la imagen */}
-                <div className="w-20 h-20 rounded-[1.5rem] shadow-[8px_8px_16px_#a3b1c6,-8px_-8px_16px_#ffffff] flex items-center justify-center">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2)] flex items-center justify-center text-white font-bold text-xs">
+                <div className="w-20 h-20 rounded-[1.5rem] shadow-[8px_8px_16px_#d1d9e6,-8px_-8px_16px_#ffffff] flex items-center justify-center">
+                  <div className="w-14 h-14 bg-gradient-to-br from-[#1D4ED8] to-[#60A5FA] rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.2)] flex items-center justify-center text-white font-bold text-xs">
                     ON
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-[#e0e5ec] shadow-[12px_12px_24px_#a3b1c6,-12px_-12px_24px_#ffffff] p-10 rounded-[3rem]">
+            <div className="bg-[#F1F5F9] shadow-[12px_12px_24px_#d1d9e6,-12px_-12px_24px_#ffffff] p-10 rounded-[3rem]">
               <div className="mb-10">
-                <h3 className="text-slate-800 font-extrabold text-2xl tracking-tight">2201</h3>
-                <p className="text-slate-400 text-xs font-medium mt-1">Horas Totales por Trabajador</p>
+                <h3 className="text-[#0A2540] font-extrabold text-2xl tracking-tight">2201</h3>
+                <p className="text-[#0A2540]/50 text-xs font-medium mt-1">Horas Totales por Trabajador</p>
               </div>
               
               {chartData.length === 0 ? (
-                <div className="py-16 flex justify-center"><span className="text-slate-400 text-sm font-bold">No hay datos suficientes para mostrar el gráfico.</span></div>
+                <div className="py-16 flex justify-center"><span className="text-[#0A2540]/50 text-sm font-bold">No hay datos suficientes para mostrar el gráfico.</span></div>
               ) : (
                 <div className="w-full h-[300px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 30, left: -20, bottom: 5 }}>
                       <defs>
-                        <linearGradient id="colorBlue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={1}/>
-                          <stop offset="95%" stopColor="#60a5fa" stopOpacity={0.8}/>
+                        <linearGradient id="colorBlueCustom" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#1D4ED8" stopOpacity={1}/>
+                          <stop offset="95%" stopColor="#60A5FA" stopOpacity={0.8}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="0" stroke="#c3c8d3" opacity={0.3} vertical={false} />
-                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} fontWeight={600} tickLine={false} axisLine={false} dy={15} />
-                      <YAxis stroke="#94a3b8" fontSize={11} fontWeight={600} tickLine={false} axisLine={false} />
-                      <Tooltip cursor={{fill: '#c3c8d3', opacity: 0.2}} contentStyle={{ backgroundColor: "#e0e5ec", borderColor: "transparent", borderRadius: "20px", color: "#334155", fontSize: "12px", fontWeight: "bold", boxShadow: "8px 8px 16px #a3b1c6, -8px -8px 16px #ffffff" }} />
-                      <Bar dataKey="horas" fill="url(#colorBlue)" radius={[12, 12, 0, 0]} barSize={40} />
+                      <CartesianGrid strokeDasharray="0" stroke="#d1d9e6" opacity={0.5} vertical={false} />
+                      <XAxis dataKey="name" stroke="#0A2540" opacity={0.6} fontSize={11} fontWeight={600} tickLine={false} axisLine={false} dy={15} />
+                      <YAxis stroke="#0A2540" opacity={0.6} fontSize={11} fontWeight={600} tickLine={false} axisLine={false} />
+                      <Tooltip cursor={{fill: '#d1d9e6', opacity: 0.3}} contentStyle={{ backgroundColor: "#F1F5F9", borderColor: "transparent", borderRadius: "20px", color: "#0A2540", fontSize: "12px", fontWeight: "bold", boxShadow: "8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff" }} />
+                      <Bar dataKey="horas" fill="url(#colorBlueCustom)" radius={[12, 12, 0, 0]} barSize={40} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
-              {/* Slider Neumórfico Estilo Imagen */}
               <div className="mt-8 flex items-center justify-center gap-4">
-                 <div className="h-4 w-full max-w-sm bg-[#e0e5ec] shadow-[inset_3px_3px_6px_#a3b1c6,inset_-3px_-3px_6px_#ffffff] rounded-full relative">
-                   <div className="absolute top-0 left-0 h-4 w-2/3 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full shadow-[2px_0px_4px_rgba(0,0,0,0.1)]"></div>
-                   <div className="absolute top-1/2 left-2/3 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-[#e0e5ec] border-[5px] border-blue-500 rounded-full shadow-[2px_2px_5px_#a3b1c6]"></div>
+                 <div className="h-4 w-full max-w-sm bg-[#F1F5F9] shadow-[inset_3px_3px_6px_#d1d9e6,inset_-3px_-3px_6px_#ffffff] rounded-full relative">
+                   <div className="absolute top-0 left-0 h-4 w-2/3 bg-gradient-to-r from-[#1D4ED8] to-[#60A5FA] rounded-full shadow-[2px_0px_4px_rgba(0,0,0,0.1)]"></div>
+                   <div className="absolute top-1/2 left-2/3 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-[#F1F5F9] border-[5px] border-[#1D4ED8] rounded-full shadow-[2px_2px_5px_#d1d9e6]"></div>
                  </div>
-                 <span className="font-bold text-slate-600 text-sm">71%</span>
+                 <span className="font-bold text-[#0A2540]/70 text-sm">71%</span>
               </div>
             </div>
           </div>
