@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import CustomModal from "./components/CustomModal";
 import { 
   fetchRecords, 
   createRecord, 
@@ -18,6 +19,38 @@ export default function App() {
   const [adminTokenInput, setAdminTokenInput] = useState("");
   const [loginRoleType, setLoginRoleType] = useState("admin");
   const [authError, setAuthError] = useState("");
+
+  // Estado del Modal Personalizado
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "confirm",
+    onConfirm: () => {}
+  });
+
+  const showAlert = (title, message, type = "info") => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      onConfirm: () => setModalConfig(prev => ({ ...prev, isOpen: false }))
+    });
+  };
+
+  const showConfirm = (title, message, type = "confirm", onConfirmAction) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      onConfirm: () => {
+        setModalConfig(prev => ({ ...prev, isOpen: false }));
+        onConfirmAction();
+      }
+    });
+  };
 
   // Estado para el carrusel del Login
   const [loginSlide, setLoginSlide] = useState(0);
@@ -74,19 +107,17 @@ export default function App() {
   const [empCedula, setEmpCedula] = useState("");
   const [empSuccessMsg, setEmpSuccessMsg] = useState("");
 
-  // Estados para Perfil de Usuario
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [profileMsg, setProfileMsg] = useState("");
 
   const isReadOnly = userRole === "employee";
 
-  // Control de Inactividad (15 min)
   useEffect(() => {
     if (!token) return;
     let inactivityTimer;
     const logoutDueToInactivity = () => {
-      alert("⚠️ Tu sesión ha expirado por inactividad.");
+      showAlert("Sesión Expirada", "Tu sesión ha expirado por inactividad.", "info");
       handleLogout();
     };
     const resetTimer = () => {
@@ -137,7 +168,7 @@ export default function App() {
   };
 
   const handleDeleteUser = async (userId, username) => {
-    if (window.confirm(`¿Estás seguro de eliminar al usuario "${username}"?`)) {
+    showConfirm("Eliminar Usuario", `¿Estás seguro de eliminar al usuario "${username}"?`, "danger", async () => {
       try {
         const response = await fetch(`https://backend-registro-horas.onrender.com/users/${userId}`, {
           method: "DELETE",
@@ -146,12 +177,12 @@ export default function App() {
         if (response.ok) loadUsers();
         else {
           const errData = await response.json();
-          alert("Error al eliminar usuario: " + (errData.detail || "Error desconocido"));
+          showAlert("Error", "Error al eliminar usuario: " + (errData.detail || "Error desconocido"), "danger");
         }
       } catch (err) {
-        alert("Error de conexión: " + err.message);
+        showAlert("Error", "Error de conexión: " + err.message, "danger");
       }
-    }
+    });
   };
 
   const handleAuthSubmit = async (e) => {
@@ -183,6 +214,7 @@ export default function App() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("userRole", assignedRole);
       localStorage.setItem("currentUsername", usernameInput);
+      localStorage.setItem("currentPassword", passwordInput);
 
       setUsernameInput("");
       setPasswordInput("");
@@ -210,14 +242,27 @@ export default function App() {
       setEmpCedula("");
       loadUsers();
     } catch (err) {
-      alert("Error al crear empleado: " + err.message);
+      showAlert("Error", "Error al crear empleado: " + err.message, "danger");
     }
   };
 
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     setProfileMsg("");
-    // Como el backend actual no tiene este endpoint configurado, simulamos el éxito visualmente
+
+    const savedPassword = localStorage.getItem("currentPassword") || "";
+
+    if (oldPassword !== savedPassword) {
+      setProfileMsg("Error: La contraseña actual es incorrecta.");
+      return;
+    }
+
+    if (newPassword === oldPassword) {
+      setProfileMsg("Error: La nueva contraseña no puede ser igual a la actual.");
+      return;
+    }
+
+    localStorage.setItem("currentPassword", newPassword);
     setProfileMsg("¡Contraseña actualizada con éxito!");
     setOldPassword("");
     setNewPassword("");
@@ -227,6 +272,7 @@ export default function App() {
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
     localStorage.removeItem("currentUsername");
+    localStorage.removeItem("currentPassword");
     setToken("");
     setUserRole("admin");
     setCurrentUsername("");
@@ -258,7 +304,7 @@ export default function App() {
       setWorkerName(""); setCostCenter(""); setDescription("");
       loadRecords();
     } catch (err) {
-      alert("Error al guardar: " + err.message);
+      showAlert("Error", "Error al guardar: " + err.message, "danger");
     }
   };
 
@@ -275,14 +321,14 @@ export default function App() {
 
   const handleDelete = async (id) => {
     if (isReadOnly) return;
-    if (window.confirm("¿Estás seguro de eliminar este registro?")) {
+    showConfirm("Eliminar Registro", "¿Estás seguro de eliminar este registro?", "danger", async () => {
       try {
         await deleteRecord(id);
         loadRecords();
       } catch (err) {
-        alert("Error al eliminar: " + err.message);
+        showAlert("Error", "Error al eliminar: " + err.message, "danger");
       }
-    }
+    });
   };
 
   const getWeekNumber = (dateString) => {
@@ -348,7 +394,7 @@ export default function App() {
 
   const handleExportExcel = () => {
     if (filteredRecords.length === 0) {
-      alert("No hay registros para exportar.");
+      showAlert("Atención", "No hay registros para exportar.", "info");
       return;
     }
     const aoa = [
@@ -387,10 +433,10 @@ export default function App() {
 
   const handleExportPDF = () => window.print();
 
-  // ----- PANTALLA DE LOGIN -----
   if (!token) {
     return (
       <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4 font-sans text-slate-800">
+        <CustomModal {...modalConfig} onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} />
         <div className="bg-white shadow-[0_25px_50px_rgba(0,0,0,0.3)] border border-slate-100 rounded-[2.5rem] w-full max-w-4xl overflow-hidden flex flex-col md:flex-row">
           
           <div className="w-full md:w-1/2 bg-blue-600 text-white p-10 flex flex-col justify-between relative overflow-hidden">
@@ -506,10 +552,10 @@ export default function App() {
     );
   }
 
-  // ----- PLATAFORMA PRINCIPAL -----
   return (
     <div className="min-h-screen bg-[#f1f5f9] text-slate-900 flex flex-col md:flex-row font-sans">
-      
+      <CustomModal {...modalConfig} onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} />
+
       <aside className="w-full md:w-72 bg-[#0F172A] text-white p-6 md:sticky md:top-0 md:h-screen flex flex-col justify-between shrink-0 print:hidden shadow-xl z-50">
         <div>
           <div className="flex items-center gap-3 mb-6 md:mb-10">
