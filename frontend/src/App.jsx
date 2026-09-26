@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import jsPDF from "jspdf";
+import { jsPDF } from "jspdf";
 import "jspdf-autotable";
 import CustomModal from "./components/CustomModal";
 import Toast from "./components/Toast";
@@ -70,10 +70,7 @@ export default function App() {
   const [userRole, setUserRole] = useState(localStorage.getItem("userRole") || "admin");
   const [currentUsername, setCurrentUsername] = useState(localStorage.getItem("currentUsername") || "");
   
-  // Estado para el Modo Oscuro
   const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode") === "true");
-
-  // Estado para Notificaciones Toast
   const [toast, setToast] = useState({ message: "", type: "success" });
 
   const showToast = (message, type = "success") => {
@@ -496,7 +493,7 @@ export default function App() {
     showToast("Reporte Excel exportado con éxito");
   };
 
-  // Exportar a PDF Formal con jsPDF
+  // Exportar a PDF Formal (Corregido y optimizado con jsPDF)
   const handleExportPDF = () => {
     if (filteredRecords.length === 0) {
       showAlert("Atención", "No hay registros para exportar en PDF.", "info");
@@ -752,7 +749,9 @@ export default function App() {
                 <p className={`text-[10px] font-bold capitalize ${darkMode ? "text-slate-400" : "text-slate-600"}`}>{userRole}</p>
               </div>
             </div>
-            <button onClick={handleLogout} className="bg-slate-100 text-red-600 px-3.5 py-2 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
+
+            {/* Botón Salir: Visible SOLO en pantallas pequeñas (móviles/tablets) */}
+            <button onClick={handleLogout} className="md:hidden bg-slate-100 text-red-600 px-3.5 py-2 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
               Salir
             </button>
           </div>
