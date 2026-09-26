@@ -341,7 +341,7 @@ export default function App() {
   if (!token) {
     return (
       <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4 font-sans text-slate-800">
-        <div className="bg-white shadow-[0_20px_40px_rgba(0,0,0,0.2)] border border-slate-100 p-10 rounded-[2.5rem] w-full max-w-md">
+        <div className="bg-white shadow-[0_20px_40px_rgba(0,0,0,0.2)] border border-slate-100 p-8 sm:p-10 rounded-[2.5rem] w-full max-w-md">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-600/30">
               F
@@ -432,47 +432,47 @@ export default function App() {
     );
   }
 
-  // ----- PLATAFORMA PRINCIPAL -----
+  // ----- PLATAFORMA PRINCIPAL (RESPONSIVE + SIDEBAR FIJO) -----
   return (
     <div className="min-h-screen bg-[#f1f5f9] text-slate-900 flex flex-col md:flex-row font-sans">
       
-      {/* Barra Lateral Oscura */}
-      <aside className="w-full md:w-72 bg-[#0F172A] text-white p-6 flex flex-col justify-between shrink-0 print:hidden shadow-xl">
+      {/* Menú Lateral Fijo en pantallas medianas y grandes */}
+      <aside className="w-full md:w-72 bg-[#0F172A] text-white p-6 md:sticky md:top-0 md:h-screen flex flex-col justify-between shrink-0 print:hidden shadow-xl z-50">
         <div>
-          <div className="flex items-center gap-3 mb-10">
+          <div className="flex items-center gap-3 mb-6 md:mb-10">
             <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-600/40">
               F
             </div>
             <span className="font-black text-xl tracking-tight text-white">Fingoals</span>
           </div>
 
-          <p className="text-[11px] uppercase tracking-wider text-slate-300 font-bold mb-4">Menú Principal</p>
+          <p className="text-[11px] uppercase tracking-wider text-slate-300 font-bold mb-3">Menú Principal</p>
           
-          <nav className="space-y-2">
+          <nav className="flex md:flex-col gap-2 overflow-x-auto pb-2 md:pb-0">
             <button 
               onClick={() => setCurrentTab("gestion")} 
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${currentTab === 'gestion' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'gestion' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
             >
-              <span>📊</span> Panel / Gestión
+              <span>📊</span> <span className="hidden sm:inline">Panel / Gestión</span><span className="sm:hidden">Gestión</span>
             </button>
             <button 
               onClick={() => setCurrentTab("estadisticas")} 
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${currentTab === 'estadisticas' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'estadisticas' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
             >
-              <span>📈</span> Analíticas y Reportes
+              <span>📈</span> <span className="hidden sm:inline">Analíticas y Reportes</span><span className="sm:hidden">Reportes</span>
             </button>
             {!isReadOnly && (
               <button 
                 onClick={() => setCurrentTab("empleados")} 
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-sm font-bold transition-all ${currentTab === 'empleados' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+                className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'empleados' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
               >
-                <span>👥</span> Accesos / Usuarios
+                <span>👥</span> <span className="hidden sm:inline">Accesos / Usuarios</span><span className="sm:hidden">Usuarios</span>
               </button>
             )}
           </nav>
         </div>
 
-        <div className="mt-8 bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-3xl text-white shadow-lg">
+        <div className="hidden md:block mt-8 bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-3xl text-white shadow-lg">
           <p className="text-xs font-bold text-blue-200 uppercase">Modo Activo</p>
           <p className="font-black text-sm mt-1">{isReadOnly ? "Empleado" : "Administrador"}</p>
           <button onClick={handleLogout} className="mt-4 w-full bg-white text-slate-900 font-black py-2.5 rounded-xl text-xs hover:bg-slate-100 transition-all shadow-md">
@@ -482,11 +482,11 @@ export default function App() {
       </aside>
 
       {/* Contenido Principal */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen overflow-y-auto">
         
-        <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-40 print:hidden shadow-sm">
+        <header className="bg-white border-b border-slate-200 px-6 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-40 print:hidden shadow-sm">
           <div>
-            <h1 className="text-xl font-black text-slate-900">¡Bienvenido de nuevo!</h1>
+            <h1 className="text-lg sm:text-xl font-black text-slate-900">¡Bienvenido de nuevo!</h1>
             <p className="text-xs text-slate-600 font-bold">Resumen general y control de jornadas</p>
           </div>
 
@@ -500,18 +500,18 @@ export default function App() {
                 <p className="text-[10px] text-slate-600 font-bold capitalize">{userRole}</p>
               </div>
             </div>
-            <button onClick={handleLogout} className="md:hidden bg-slate-100 text-red-600 px-3 py-1.5 rounded-xl text-xs font-black">
+            <button onClick={handleLogout} className="bg-slate-100 text-red-600 px-3.5 py-2 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
               Salir
             </button>
           </div>
         </header>
 
-        <main className="flex-1 p-6 sm:p-10 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-10 max-w-7xl mx-auto w-full">
           {currentTab === "gestion" ? (
             <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-8`}>
               
               {!isReadOnly && (
-                <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm h-fit print:hidden">
+                <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm h-fit print:hidden">
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="font-black text-slate-900 text-base">
                       {editingId ? "Editar Registro" : "Nuevo Registro"}
@@ -555,8 +555,8 @@ export default function App() {
                 </div>
               )}
 
-              {/* Historial de Registros - Con Títulos Claros y Contenedor de Horas Amplio */}
-              <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm flex flex-col justify-between`}>
+              {/* Historial de Registros - Cabecera Azul de Alto Contraste */}
+              <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-white border border-slate-200 p-4 sm:p-8 rounded-[2rem] shadow-sm flex flex-col justify-between`}>
                 <div>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
                     <h2 className="font-black text-slate-900 text-lg">Historial de Registros</h2>
@@ -602,8 +602,8 @@ export default function App() {
                     <div className="overflow-x-auto rounded-2xl border border-slate-200">
                       <table className="w-full text-left min-w-[650px]">
                         <thead>
-                          {/* TÍTULOS DE LAS COLUMNAS CON ALTO CONTRASTE Y NEGRITA */}
-                          <tr className="bg-slate-100 text-slate-900 text-[11px] font-black uppercase tracking-wider border-b border-slate-200">
+                          {/* CABECERA AZUL SÓLIDA PARA MÁXIMA LEGIBILIDAD */}
+                          <tr className="bg-blue-600 text-white text-[11px] font-black uppercase tracking-wider">
                             <th className="py-4 px-4">Trabajador</th>
                             <th className="py-4 px-4">Fecha</th>
                             <th className="py-4 px-4">Horario</th>
@@ -619,7 +619,6 @@ export default function App() {
                               <td className="py-4 px-4 font-black text-slate-950">{rec.worker_name || rec.trabajador}</td>
                               <td className="py-4 px-4 text-slate-800">{rec.work_date || rec.fecha}</td>
                               <td className="py-4 px-4 text-slate-700">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
-                              {/* CONTENEDOR DE HORAS AMPLIADO Y CLARO */}
                               <td className="py-4 px-4">
                                 <span className="inline-block min-w-[85px] text-center bg-blue-100 text-blue-900 px-3 py-1.5 rounded-xl font-black shadow-sm">
                                   {Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs
@@ -658,7 +657,7 @@ export default function App() {
             </div>
           ) : currentTab === "empleados" && !isReadOnly ? (
             <div className="space-y-6 max-w-4xl mx-auto">
-              <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm">
+              <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm">
                 <h2 className="text-lg font-black text-slate-900 mb-1">Crear Acceso para Empleado</h2>
                 <p className="text-xs text-slate-600 mb-6 font-bold">Genera una cuenta de solo visualización asociada a la cédula.</p>
 
@@ -689,8 +688,8 @@ export default function App() {
                 </form>
               </div>
 
-              {/* Directorio de Usuarios - Títulos Claros */}
-              <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm">
+              {/* Directorio de Usuarios - Cabecera Azul */}
+              <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm">
                 <h2 className="text-lg font-black text-slate-900 mb-4">Directorio de Usuarios</h2>
                 {usersList.length === 0 ? (
                   <div className="py-8 flex justify-center"><span className="text-slate-600 text-sm font-bold">No hay usuarios cargados.</span></div>
@@ -698,7 +697,7 @@ export default function App() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[500px]">
                       <thead>
-                        <tr className="border-b border-slate-200 bg-slate-100 text-slate-900 text-[11px] font-black uppercase">
+                        <tr className="bg-blue-600 text-white text-[11px] font-black uppercase">
                           <th className="py-3 px-3">ID</th>
                           <th className="py-3 px-3">Usuario</th>
                           <th className="py-3 px-3">Rol</th>
