@@ -3,14 +3,10 @@ import XLSX from "xlsx-js-style";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from "firebase/firestore";
+import { db } from "./firebase";
 import CustomModal from "./components/CustomModal";
 import Toast from "./components/Toast";
-import { 
-  fetchRecords, 
-  createRecord, 
-  updateRecord, 
-  deleteRecord 
-} from "./api";
 
 function LoginIllustration({ slideIndex }) {
   return (
@@ -168,25 +164,32 @@ export default function App() {
 
   const isReadOnly = userRole === "employee";
 
-  useEffect(() => {
-    if (!token) return;
-    let inactivityTimer;
-    const logoutDueToInactivity = () => {
-      showAlert("Sesión Expirada", "Tu sesión ha expirado por inactividad.", "info");
-      handleLogout();
-    };
-    const resetTimer = () => {
-      clearTimeout(inactivityTimer);
-      inactivityTimer = setTimeout(logoutDueToInactivity, 15 * 60 * 1000);
-    };
-    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
-    events.forEach(event => window.addEventListener(event, resetTimer));
-    resetTimer();
-    return () => {
-      clearTimeout(inactivityTimer);
-      events.forEach(event => window.removeEventListener(event, resetTimer));
-    };
-  }, [token]);
+  // Cargar registros desde Firestore
+  const loadRecords = async () => {
+    try {
+      setLoading(true);
+      const querySnapshot = await getDocs(collection(db, "records"));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRecords(data);
+    } catch (err) {
+      console.error(err);
+      showToast("Error al cargar registros", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar usuarios desde Firestore
+  const loadUsers = async () => {
+    if (isReadOnly) return;
+    try {
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setUsersList(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     if (token) {
@@ -195,49 +198,14 @@ export default function App() {
     }
   }, [token]);
 
-  const loadRecords = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchRecords();
-      setRecords(data);
-    } catch (err) {
-      if (err.message.includes("expirada") || err.message.includes("401")) handleLogout();
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadUsers = async () => {
-    if (isReadOnly) return;
-    try {
-      const response = await fetch("https://backend-registro-horas.onrender.com/users", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUsersList(data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
   const handleDeleteUser = async (userId, username) => {
     showConfirm("Eliminar Usuario", `¿Estás seguro de eliminar al usuario "${username}"?`, "danger", async () => {
       try {
-        const response = await fetch(`https://backend-registro-horas.onrender.com/users/${userId}`, {
-          method: "DELETE",
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (response.ok) {
-          loadUsers();
-          showToast("Usuario eliminado correctamente");
-        } else {
-          const errData = await response.json();
-          showAlert("Error", "Error al eliminar usuario: " + (errData.detail || "Error desconocido"), "danger");
-        }
+        await deleteDoc(doc(db, "users", userId));
+        loadUsers();
+        showToast("Usuario eliminado correctamente");
       } catch (err) {
-        showAlert("Error", "Error de conexión: " + err.message, "danger");
+        showAlert("Error", "Error al eliminar usuario: " + err.message, "danger");
       }
     });
   };
@@ -246,31 +214,45 @@ export default function App() {
     e.preventDefault();
     setAuthError("");
     try {
-      let response;
-      if (loginRoleType === "admin") {
-        response = await fetch("https://backend-registro-horas.onrender.com/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: usernameInput, password: passwordInput, admin_token: adminTokenInput })
-        });
-      } else {
-        response = await fetch("https://backend-registro-horas.onrender.com/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: usernameInput, password: passwordInput })
-        });
+      // Buscar usuario en Firestore
+      const q = query(collection(db, "users"), where("username", "==", usernameInput));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        // Si no hay usuarios creados aún y es admin con token predeterminado, creamos un admin por defecto
+        if (loginRoleType === "admin" && usernameInput === "admin" && adminTokenInput === "12345") {
+          const defaultAdmin = { username: "admin", password: passwordInput, role: "admin", cedula: "0000000000" };
+          await addDoc(collection(db, "users"), defaultAdmin);
+          setToken("firebase_session_token");
+          setUserRole("admin");
+          setCurrentUsername("admin");
+          localStorage.setItem("token", "firebase_session_token");
+          localStorage.setItem("userRole", "admin");
+          localStorage.setItem("currentUsername", "admin");
+          localStorage.setItem("currentPassword", passwordInput);
+          showToast("¡Bienvenido Administrador!");
+          return;
+        }
+        throw new Error("Usuario o contraseña incorrectos");
       }
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || "Error al iniciar sesión");
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data();
 
-      const assignedRole = data.role || "admin";
-      setToken(data.token);
-      setUserRole(assignedRole);
-      setCurrentUsername(usernameInput);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("userRole", assignedRole);
-      localStorage.setItem("currentUsername", usernameInput);
+      if (userData.password !== passwordInput) {
+        throw new Error("Contraseña incorrecta");
+      }
+
+      if (loginRoleType === "admin" && userData.role !== "admin") {
+        throw new Error("Este usuario no tiene permisos de Administrador");
+      }
+
+      setToken("firebase_session_token");
+      setUserRole(userData.role || "admin");
+      setCurrentUsername(userData.username);
+      localStorage.setItem("token", "firebase_session_token");
+      localStorage.setItem("userRole", userData.role || "admin");
+      localStorage.setItem("currentUsername", userData.username);
       localStorage.setItem("currentPassword", passwordInput);
 
       setUsernameInput("");
@@ -285,14 +267,12 @@ export default function App() {
   const handleCreateEmployee = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("https://backend-registro-horas.onrender.com/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: empUsername, password: empPassword, role: "employee", cedula: empCedula })
+      await addDoc(collection(db, "users"), {
+        username: empUsername,
+        password: empPassword,
+        role: "employee",
+        cedula: empCedula
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.detail || "Error al crear empleado");
-
       showToast(`¡Acceso creado para ${empUsername}!`);
       setEmpUsername("");
       setEmpPassword("");
@@ -306,7 +286,6 @@ export default function App() {
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
     setProfileMsg("");
-
     const savedPassword = localStorage.getItem("currentPassword") || "";
 
     if (oldPassword !== savedPassword) {
@@ -352,13 +331,23 @@ export default function App() {
     e.preventDefault();
     if (isReadOnly) return;
     try {
-      const recordData = { worker_name: workerName, work_date: workDate, entry_time: entryTime, exit_time: exitTime, calculated_hours: calculatedHours, cost_center: costCenter, description: description };
+      const recordData = { 
+        worker_name: workerName, 
+        work_date: workDate, 
+        entry_time: entryTime, 
+        exit_time: exitTime, 
+        calculated_hours: calculatedHours, 
+        cost_center: costCenter, 
+        description: description 
+      };
+
       if (editingId) {
-        await updateRecord(editingId, recordData);
+        const recordRef = doc(db, "records", editingId);
+        await updateDoc(recordRef, recordData);
         setEditingId(null);
         showToast("Registro actualizado con éxito");
       } else {
-        await createRecord(recordData);
+        await addDoc(collection(db, "records"), recordData);
         showToast("Registro guardado con éxito");
       }
       setWorkerName(""); setCostCenter(""); setDescription("");
@@ -383,7 +372,7 @@ export default function App() {
     if (isReadOnly) return;
     showConfirm("Eliminar Registro", "¿Estás seguro de eliminar este registro?", "danger", async () => {
       try {
-        await deleteRecord(id);
+        await deleteDoc(doc(db, "records", id));
         loadRecords();
         showToast("Registro eliminado");
       } catch (err) {
@@ -493,7 +482,6 @@ export default function App() {
     showToast("Reporte Excel exportado con éxito");
   };
 
-  // Exportar a PDF Formal corregido usando autoTable correctamente
   const handleExportPDF = () => {
     if (filteredRecords.length === 0) {
       showAlert("Atención", "No hay registros para exportar en PDF.", "info");
@@ -731,7 +719,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Botón de Modo Oscuro */}
             <button 
               onClick={toggleDarkMode}
               className={`p-2.5 rounded-2xl text-sm font-bold border transition-all ${darkMode ? "bg-slate-800 border-slate-700 text-amber-400" : "bg-slate-100 border-slate-200 text-slate-700"}`}
@@ -750,7 +737,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Botón Salir: Visible SOLO en pantallas pequeñas */}
             <button onClick={handleLogout} className="md:hidden bg-slate-100 text-red-600 px-3.5 py-2 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
               Salir
             </button>
@@ -950,7 +936,7 @@ export default function App() {
                       <tbody className={`divide-y text-xs font-bold ${darkMode ? "divide-slate-800 text-slate-200" : "divide-slate-200 text-slate-900"}`}>
                         {usersList.map((u) => (
                           <tr key={u.id} className={`hover:bg-slate-800/30`}>
-                            <td className="py-3.5 px-3 opacity-75">#{u.id}</td>
+                            <td className="py-3.5 px-3 opacity-75">#{u.id.substring(0, 5)}...</td>
                             <td className="py-3.5 px-3 font-black">{u.username}</td>
                             <td className="py-3.5 px-3">
                               <span className={`px-3 py-1 rounded-xl font-black ${u.role === 'admin' ? 'bg-indigo-100 text-indigo-900' : 'bg-blue-100 text-blue-900'}`}>
