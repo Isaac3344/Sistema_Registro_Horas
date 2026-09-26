@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import CustomModal from "./components/CustomModal";
 import Toast from "./components/Toast";
 import { 
@@ -493,7 +493,7 @@ export default function App() {
     showToast("Reporte Excel exportado con éxito");
   };
 
-  // Exportar a PDF Formal (Corregido y optimizado con jsPDF)
+  // Exportar a PDF Formal corregido usando autoTable correctamente
   const handleExportPDF = () => {
     if (filteredRecords.length === 0) {
       showAlert("Atención", "No hay registros para exportar en PDF.", "info");
@@ -527,7 +527,7 @@ export default function App() {
       ]);
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 35,
@@ -750,7 +750,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Botón Salir: Visible SOLO en pantallas pequeñas (móviles/tablets) */}
+            {/* Botón Salir: Visible SOLO en pantallas pequeñas */}
             <button onClick={handleLogout} className="md:hidden bg-slate-100 text-red-600 px-3.5 py-2 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">
               Salir
             </button>
