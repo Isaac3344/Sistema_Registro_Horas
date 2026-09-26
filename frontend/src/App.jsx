@@ -326,10 +326,10 @@ export default function App() {
 
     aoa.push(["", "", "", "", "TOTAL HORAS:", totalHorasSuma, "", ""]);
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
-    const headerStyle = { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "18181B" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const titleStyle = { font: { name: "Arial", sz: 12, bold: true, color: { rgb: "09090B" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const headerStyle = { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F46E5" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const titleStyle = { font: { name: "Arial", sz: 12, bold: true, color: { rgb: "1E293B" } }, alignment: { horizontal: "center", vertical: "center" } };
     const cellStyle = { font: { name: "Arial", sz: 9 }, alignment: { vertical: "center" } };
-    const totalStyle = { font: { name: "Arial", sz: 10, bold: true }, fill: { fgColor: { rgb: "F4F4F5" } }, alignment: { horizontal: "right", vertical: "center" } };
+    const totalStyle = { font: { name: "Arial", sz: 10, bold: true }, fill: { fgColor: { rgb: "E2E8F0" } }, alignment: { horizontal: "right", vertical: "center" } };
 
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -351,82 +351,83 @@ export default function App() {
 
   const handleExportPDF = () => window.print();
 
-  // ----- PANTALLA DE LOGIN (MODERNA Y MINIMALISTA) -----
+  // ----- PANTALLA DE LOGIN (COLORIDA Y VIBRANTE) -----
   if (!token) {
     return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-violet-500/30">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[400px] bg-violet-600/15 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-indigo-500/30">
+        <div className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/20 blur-[100px] rounded-full pointer-events-none animate-pulse"></div>
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-600/10 blur-[100px] rounded-full pointer-events-none animate-pulse" style={{ animationDuration: '4s' }}></div>
 
-        <div className="bg-[#09090b]/80 backdrop-blur-2xl border border-white/5 p-8 sm:p-10 rounded-[24px] shadow-2xl w-full max-w-md relative z-10">
-          <div className="mb-8">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#09090b] text-xl mb-4 font-bold">
-              AR
+        <div className="bg-slate-900/80 backdrop-blur-2xl border border-slate-800/80 p-8 sm:p-10 rounded-3xl shadow-2xl w-full max-w-md relative z-10">
+          <div className="text-center mb-8">
+            <div className="mx-auto w-14 h-14 bg-gradient-to-tr from-indigo-600 to-indigo-400 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-500/20 mb-4 ring-4 ring-indigo-500/10">
+              ⚡
             </div>
-            <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Iniciar Sesión</h1>
-            <p className="text-zinc-500 text-sm mt-1.5">Plataforma Segura de Horas</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">Acceso Seguro</h1>
+            <p className="text-slate-400 text-sm mt-2">Plataforma de Control de Horas</p>
           </div>
 
-          <div className="flex bg-zinc-900/50 p-1 rounded-xl border border-white/5 mb-6">
+          <div className="flex bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 mb-6 shadow-inner">
             <button
               type="button"
               onClick={() => setLoginRoleType("admin")}
-              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                loginRoleType === "admin" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                loginRoleType === "admin" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/40" : "text-slate-400 hover:text-white"
               }`}
             >
-              Administrador
+              👑 Administrador
             </button>
             <button
               type="button"
               onClick={() => setLoginRoleType("employee")}
-              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
-                loginRoleType === "employee" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                loginRoleType === "employee" ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/40" : "text-slate-400 hover:text-white"
               }`}
             >
-              Empleado
+              👁️ Empleado
             </button>
           </div>
 
           {authError && (
-            <div className="mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs text-center">
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-xs font-medium text-center">
               {authError}
             </div>
           )}
 
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Usuario</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Usuario</label>
               <input
                 type="text"
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600"
+                className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                 placeholder="Ingresa tu usuario"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Contraseña</label>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Contraseña</label>
               <input
                 type="password"
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600"
+                className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600"
                 placeholder="••••••••"
               />
             </div>
 
             {loginRoleType === "admin" && (
               <div>
-                <label className="block text-xs font-medium text-violet-400 mb-1.5">Token Secreto</label>
+                <label className="block text-xs font-bold text-indigo-400 uppercase tracking-wider mb-2">🔑 Token Secreto</label>
                 <input
                   type="password"
                   required
                   value={adminTokenInput}
                   onChange={(e) => setAdminTokenInput(e.target.value)}
-                  className="w-full bg-zinc-900/50 border border-violet-500/30 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/50 transition-all placeholder:text-zinc-600"
+                  className="w-full bg-slate-950/60 border border-indigo-500/40 rounded-2xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/15 transition-all placeholder:text-slate-600"
                   placeholder="Código de seguridad"
                 />
               </div>
@@ -434,9 +435,9 @@ export default function App() {
 
             <button
               type="submit"
-              className="w-full mt-2 bg-zinc-100 hover:bg-white text-zinc-950 font-medium py-3 rounded-xl transition-all duration-200 text-sm active:scale-[0.98]"
+              className="w-full mt-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-600 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-600/30 transition-all duration-300 text-sm active:scale-[0.98]"
             >
-              Entrar al Sistema
+              Iniciar Sesión
             </button>
           </form>
         </div>
@@ -444,47 +445,47 @@ export default function App() {
     );
   }
 
-  // ----- PLATAFORMA PRINCIPAL (MODERNA Y MINIMALISTA) -----
+  // ----- PLATAFORMA PRINCIPAL (COLORIDA Y VIBRANTE) -----
   return (
-    <div className="min-h-screen bg-[#09090b] text-zinc-200 flex flex-col font-sans selection:bg-violet-500/30">
+    <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col font-sans selection:bg-indigo-500/30">
       
-      {/* Header Minimalista */}
-      <header className="bg-[#09090b]/80 backdrop-blur-md border-b border-white/5 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-40 print:hidden">
+      {/* Header Vibrante */}
+      <header className="bg-slate-900/80 backdrop-blur-xl border-b border-slate-800/80 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-40 print:hidden shadow-lg">
         <div className="flex items-center justify-between w-full md:w-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-zinc-100 rounded-lg flex items-center justify-center text-[#09090b] font-bold text-xs">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-gradient-to-tr from-emerald-600 to-emerald-400 rounded-2xl flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-500/20">
               AR
             </div>
             <div>
-              <h1 className="font-semibold text-zinc-100 text-sm tracking-tight">App Registro</h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
+              <h1 className="font-bold text-white text-base tracking-wide">App Registro</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                   {isReadOnly ? "Modo Empleado" : "Administrador"}
                 </p>
               </div>
             </div>
           </div>
-          <button onClick={handleLogout} className="md:hidden text-zinc-400 hover:text-zinc-200 text-xs font-medium">
+          <button onClick={handleLogout} className="md:hidden bg-red-500/10 text-red-400 px-4 py-2 rounded-xl text-xs font-bold">
             Salir
           </button>
         </div>
 
-        <div className="flex items-center bg-zinc-900/80 p-1 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto">
-          <button onClick={() => setCurrentTab("gestion")} className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${currentTab === "gestion" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}>
-            Gestión
+        <div className="flex items-center bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800/80 w-full md:w-auto overflow-x-auto shadow-inner">
+          <button onClick={() => setCurrentTab("gestion")} className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "gestion" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"}`}>
+            📋 Gestión
           </button>
-          <button onClick={() => setCurrentTab("estadisticas")} className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${currentTab === "estadisticas" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}>
-            Estadísticas
+          <button onClick={() => setCurrentTab("estadisticas")} className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "estadisticas" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"}`}>
+            📊 Estadísticas
           </button>
           {!isReadOnly && (
-            <button onClick={() => setCurrentTab("empleados")} className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${currentTab === "empleados" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}>
-              Accesos
+            <button onClick={() => setCurrentTab("empleados")} className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "empleados" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30" : "text-slate-400 hover:text-white"}`}>
+              👤 Accesos
             </button>
           )}
         </div>
 
-        <button onClick={handleLogout} className="hidden md:block text-zinc-400 hover:text-zinc-200 text-xs font-medium transition-colors">
+        <button onClick={handleLogout} className="hidden md:block bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all">
           Cerrar Sesión
         </button>
       </header>
@@ -495,121 +496,128 @@ export default function App() {
             
             {/* Panel Izquierdo: Formulario */}
             {!isReadOnly && (
-              <div className="bg-[#0c0c0e] border border-white/5 p-6 rounded-[20px] h-fit print:hidden">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="font-medium text-zinc-100 text-sm">
-                    {editingId ? "Editar Registro" : "Nuevo Registro"}
+              <div className="bg-slate-900/90 border border-slate-800/80 p-6 sm:p-8 rounded-[24px] shadow-2xl h-fit print:hidden relative overflow-hidden">
+                {/* Detalle decorativo sutil */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full"></div>
+                
+                <div className="flex justify-between items-center mb-8 relative z-10">
+                  <h2 className="font-bold text-white text-base">
+                    {editingId ? "✏️ Editar Registro" : "➕ Nuevo Registro"}
                   </h2>
-                  <span className="text-zinc-400 text-xs font-mono bg-zinc-900 px-2 py-1 rounded-md border border-white/5">
+                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm">
                     {calculatedHours.toFixed(2)} hrs
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmitRecord} className="space-y-4">
+                <form onSubmit={handleSubmitRecord} className="space-y-5 relative z-10">
                   <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Trabajador</label>
-                    <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600" placeholder="Nombre completo" />
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Trabajador</label>
+                    <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600" placeholder="Nombre completo" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Fecha</label>
-                    <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all" />
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Fecha</label>
+                    <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Entrada</label>
-                      <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all" />
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Entrada</label>
+                      <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all" />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Salida</label>
-                      <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all" />
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Salida</label>
+                      <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all" />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Cédula / CC</label>
-                    <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600" placeholder="Ej. 1700000000" />
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Cédula / CC</label>
+                    <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600" placeholder="Ej. 1700000000" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Descripción</label>
-                    <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600 resize-none" placeholder="Opcional..."></textarea>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Descripción</label>
+                    <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-600 resize-none" placeholder="Detalles de la tarea..."></textarea>
                   </div>
-                  <button type="submit" className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-medium py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98]">
-                    {editingId ? "Guardar Cambios" : "Crear Registro"}
+                  <button type="submit" className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all duration-300 text-sm active:scale-[0.98] mt-2">
+                    {editingId ? "Actualizar Registro" : "Guardar Registro"}
                   </button>
                 </form>
               </div>
             )}
 
             {/* Panel Derecho: Historial */}
-            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-[#0c0c0e] border border-white/5 p-6 sm:p-8 rounded-[20px] flex flex-col justify-between`}>
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
-                  <h2 className="font-medium text-zinc-100 text-sm">Historial de Registros</h2>
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <button onClick={handleExportExcel} className="bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
-                      Descargar Excel
+            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900/90 border border-slate-800/80 p-6 sm:p-8 rounded-[24px] shadow-2xl flex flex-col justify-between relative overflow-hidden`}>
+              <div className="absolute -top-32 -right-32 w-64 h-64 bg-emerald-500/5 blur-[80px] rounded-full pointer-events-none"></div>
+
+              <div className="relative z-10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 print:hidden">
+                  <div>
+                    <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
+                    <p className="text-xs text-slate-400 mt-1">Consulta y exporta tus jornadas detalladas</p>
+                  </div>
+                  <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <button onClick={handleExportExcel} className="flex-1 sm:flex-none bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm">
+                      📊 Excel
                     </button>
-                    <button onClick={handleExportPDF} className="bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
-                      Imprimir PDF
+                    <button onClick={handleExportPDF} className="flex-1 sm:flex-none bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm">
+                      📄 PDF
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 print:hidden">
-                  <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-2 text-zinc-300 text-xs focus:outline-none focus:border-violet-500 transition-all">
-                    <option value="all">Todos los trabajadores</option>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8 print:hidden">
+                  <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3.5 text-white text-xs font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                    <option value="all">👤 Todos los trabajadores</option>
                     {uniqueWorkers.map(w => <option key={w} value={w}>{w}</option>)}
                   </select>
-                  <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-2 text-zinc-300 text-xs focus:outline-none focus:border-violet-500 transition-all">
-                    <option value="all">Filtro de tiempo: Inactivo</option>
-                    <option value="month">Filtrar por Mes</option>
-                    <option value="week">Filtrar por Semana</option>
+                  <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3.5 text-white text-xs font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                    <option value="all">⚡ Todos los periodos</option>
+                    <option value="month">📅 Filtrar por Mes</option>
+                    <option value="week">📆 Filtrar por Semana</option>
                   </select>
                   {filterType === "month" && (
-                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-2 text-zinc-300 text-xs focus:outline-none focus:border-violet-500 transition-all">
-                      <option value="">Seleccionar mes</option>
+                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3.5 text-white text-xs font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                      <option value="">Selecciona el mes...</option>
                       {availableMonthsForWorker.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   )}
                   {filterType === "week" && (
-                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-2 text-zinc-300 text-xs focus:outline-none focus:border-violet-500 transition-all">
-                      <option value="">Seleccionar semana</option>
+                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3.5 text-white text-xs font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all">
+                      <option value="">Selecciona la semana...</option>
                       {availableWeeksForWorker.map(w => <option key={w} value={w}>{w}</option>)}
                     </select>
                   )}
                 </div>
 
                 {loading ? (
-                  <div className="py-12 flex justify-center"><span className="text-zinc-600 text-sm">Cargando datos...</span></div>
+                  <div className="py-16 flex justify-center"><span className="text-slate-500 text-sm font-medium animate-pulse">Cargando registros...</span></div>
                 ) : filteredRecords.length === 0 ? (
-                  <div className="py-12 flex justify-center"><span className="text-zinc-600 text-sm">No se encontraron resultados.</span></div>
+                  <div className="py-16 flex justify-center"><span className="text-slate-500 text-sm font-medium">No se encontraron registros.</span></div>
                 ) : (
-                  <div className="overflow-x-auto rounded-xl border border-white/5">
-                    <table className="w-full text-left border-collapse min-w-[650px]">
+                  <div className="overflow-x-auto rounded-2xl border border-slate-800/60 bg-slate-950/20">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
                       <thead>
-                        <tr className="bg-zinc-900/30 text-zinc-500 text-[10px] font-medium uppercase tracking-widest border-b border-white/5">
-                          <th className="py-3 px-4">Trabajador</th>
-                          <th className="py-3 px-4">Fecha</th>
-                          <th className="py-3 px-4">Horario</th>
-                          <th className="py-3 px-4">Total</th>
-                          <th className="py-3 px-4">Cédula</th>
-                          <th className="py-3 px-4">Nota</th>
-                          {!isReadOnly && <th className="py-3 px-4 text-right print:hidden">Acciones</th>}
+                        <tr className="bg-slate-950/40 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-800/80">
+                          <th className="py-4 px-5">Trabajador</th>
+                          <th className="py-4 px-5">Fecha</th>
+                          <th className="py-4 px-5">Horario</th>
+                          <th className="py-4 px-5">Horas</th>
+                          <th className="py-4 px-5">Cédula</th>
+                          <th className="py-4 px-5">Descripción</th>
+                          {!isReadOnly && <th className="py-4 px-5 text-right print:hidden">Acciones</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-white/5 text-xs">
+                      <tbody className="divide-y divide-slate-800/50 text-sm">
                         {currentRecords.map((rec) => (
-                          <tr key={rec.id} className="hover:bg-zinc-900/20 transition-colors group">
-                            <td className="py-3.5 px-4 font-medium text-zinc-200">{rec.worker_name || rec.trabajador}</td>
-                            <td className="py-3.5 px-4 text-zinc-400">{rec.work_date || rec.fecha}</td>
-                            <td className="py-3.5 px-4 text-zinc-500">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
-                            <td className="py-3.5 px-4"><span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded border border-white/5">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)}h</span></td>
-                            <td className="py-3.5 px-4 text-zinc-500">{rec.cost_center || rec.centro_costo || "-"}</td>
-                            <td className="py-3.5 px-4 text-zinc-500 max-w-[120px] truncate" title={rec.description || rec.descripcion}>{rec.description || rec.descripcion || "-"}</td>
+                          <tr key={rec.id} className="hover:bg-slate-800/30 transition-colors">
+                            <td className="py-4 px-5 font-bold text-white">{rec.worker_name || rec.trabajador}</td>
+                            <td className="py-4 px-5 text-slate-300 font-medium">{rec.work_date || rec.fecha}</td>
+                            <td className="py-4 px-5 text-slate-400 text-xs font-medium">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
+                            <td className="py-4 px-5"><span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-lg font-bold text-xs">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs</span></td>
+                            <td className="py-4 px-5 text-slate-400 text-xs font-medium">{rec.cost_center || rec.centro_costo || "-"}</td>
+                            <td className="py-4 px-5 text-slate-400 text-xs max-w-[150px] truncate">{rec.description || rec.descripcion || "-"}</td>
                             {!isReadOnly && (
-                              <td className="py-3.5 px-4 text-right space-x-2 print:hidden opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => handleEdit(rec)} className="text-zinc-400 hover:text-white transition-colors">Editar</button>
-                                <span className="text-zinc-700">|</span>
-                                <button onClick={() => handleDelete(rec.id)} className="text-zinc-400 hover:text-red-400 transition-colors">Eliminar</button>
+                              <td className="py-4 px-5 text-right space-x-2 print:hidden whitespace-nowrap">
+                                <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-white text-xs font-bold px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-xl transition-all">Editar</button>
+                                <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-white text-xs font-bold px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-all">Borrar</button>
                               </td>
                             )}
                           </tr>
@@ -621,14 +629,14 @@ export default function App() {
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-6 print:hidden">
-                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="text-zinc-400 hover:text-white disabled:opacity-30 text-xs font-medium transition-colors">
+                <div className="flex items-center justify-between border-t border-slate-800/80 pt-5 mt-6 print:hidden relative z-10">
+                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-4 py-2.5 bg-slate-950/60 border border-slate-800/80 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 transition-all shadow-sm">
                     ← Anterior
                   </button>
-                  <span className="text-[11px] text-zinc-500 font-medium">
-                    <span className="text-zinc-200">{currentPage}</span> / {totalPages}
+                  <span className="text-xs text-slate-400 font-semibold">
+                    Página <strong className="text-white">{currentPage}</strong> de <strong className="text-white">{totalPages}</strong>
                   </span>
-                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="text-zinc-400 hover:text-white disabled:opacity-30 text-xs font-medium transition-colors">
+                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-4 py-2.5 bg-slate-950/60 border border-slate-800/80 rounded-xl text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 transition-all shadow-sm">
                     Siguiente →
                   </button>
                 </div>
@@ -636,67 +644,70 @@ export default function App() {
             </div>
           </div>
         ) : currentTab === "empleados" && !isReadOnly ? (
-          <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="bg-[#0c0c0e] border border-white/5 p-6 sm:p-8 rounded-[20px]">
-              <h2 className="text-sm font-medium text-zinc-100 mb-1">Generar Acceso</h2>
-              <p className="text-xs text-zinc-500 mb-6">Crea cuentas limitadas para visualización.</p>
+          <div className="space-y-8 max-w-4xl mx-auto">
+            <div className="bg-slate-900/90 border border-slate-800/80 p-8 rounded-[24px] shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full"></div>
+              <h2 className="text-lg font-bold text-white mb-1 relative z-10">👤 Crear Acceso para Empleado</h2>
+              <p className="text-xs text-slate-400 mb-8 font-medium relative z-10">Genera un usuario de solo vista vinculado de forma segura a su número de cédula.</p>
 
               {empSuccessMsg && (
-                <div className="mb-6 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs text-center font-medium">
+                <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm text-center font-bold shadow-sm relative z-10">
                   {empSuccessMsg}
                 </div>
               )}
 
-              <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-4 gap-5 items-end relative z-10">
                 <div className="md:col-span-1">
-                  <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Usuario</label>
-                  <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2 text-zinc-200 text-sm focus:outline-none focus:border-violet-500" placeholder="Ej. juan" />
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Usuario</label>
+                  <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Ej. juan_emp" />
                 </div>
                 <div className="md:col-span-1">
-                  <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Contraseña</label>
-                  <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2 text-zinc-200 text-sm focus:outline-none focus:border-violet-500" placeholder="••••••••" />
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Contraseña</label>
+                  <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="••••••••" />
                 </div>
                 <div className="md:col-span-1">
-                  <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Cédula</label>
-                  <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2 text-zinc-200 text-sm focus:outline-none focus:border-violet-500" placeholder="17000000" />
+                  <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Cédula *</label>
+                  <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className="w-full bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all" placeholder="Ej. 1728394850" />
                 </div>
-                <div className="md:col-span-1">
-                  <button type="submit" className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-medium py-2 rounded-xl transition-all text-sm">
+                <div className="md:col-span-1 pt-2">
+                  <button type="submit" className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-indigo-600/30 transition-all text-sm active:scale-[0.98]">
                     Crear Cuenta
                   </button>
                 </div>
               </form>
             </div>
 
-            <div className="bg-[#0c0c0e] border border-white/5 p-6 sm:p-8 rounded-[20px]">
-              <h2 className="text-sm font-medium text-zinc-100 mb-6">Directorio de Accesos</h2>
+            <div className="bg-slate-900/90 border border-slate-800/80 p-8 rounded-[24px] shadow-2xl">
+              <h2 className="text-lg font-bold text-white mb-6">📋 Lista de Usuarios Registrados</h2>
               {usersList.length === 0 ? (
-                <div className="py-8 flex justify-center"><span className="text-zinc-600 text-sm">No hay usuarios registrados.</span></div>
+                <div className="py-12 flex justify-center"><span className="text-slate-500 text-sm font-medium">No hay usuarios cargados.</span></div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-white/5">
-                  <table className="w-full text-left border-collapse">
+                <div className="overflow-x-auto rounded-2xl border border-slate-800/60 bg-slate-950/20">
+                  <table className="w-full text-left border-collapse min-w-[500px]">
                     <thead>
-                      <tr className="bg-zinc-900/30 text-zinc-500 text-[10px] font-medium uppercase tracking-widest border-b border-white/5">
-                        <th className="py-3 px-4">ID</th>
-                        <th className="py-3 px-4">Usuario</th>
-                        <th className="py-3 px-4">Rol</th>
-                        <th className="py-3 px-4">Cédula</th>
-                        <th className="py-3 px-4 text-right">Revocar</th>
+                      <tr className="bg-slate-950/40 text-slate-400 text-[11px] font-bold uppercase tracking-wider border-b border-slate-800/80">
+                        <th className="py-4 px-5">ID</th>
+                        <th className="py-4 px-5">Usuario</th>
+                        <th className="py-4 px-5">Rol</th>
+                        <th className="py-4 px-5">Cédula Vinculada</th>
+                        <th className="py-4 px-5 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5 text-xs">
+                    <tbody className="divide-y divide-slate-800/50 text-sm">
                       {usersList.map((u) => (
-                        <tr key={u.id} className="hover:bg-zinc-900/20 transition-colors">
-                          <td className="py-3 px-4 text-zinc-500">#{u.id}</td>
-                          <td className="py-3 px-4 font-medium text-zinc-200">{u.username}</td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider ${u.role === 'admin' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'bg-zinc-800 text-zinc-400 border-white/5'}`}>
-                              {u.role === 'admin' ? 'Admin' : 'Empleado'}
+                        <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="py-4 px-5 text-slate-400 font-medium">#{u.id}</td>
+                          <td className="py-4 px-5 font-bold text-white">{u.username}</td>
+                          <td className="py-4 px-5">
+                            <span className={`px-3 py-1 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm ${u.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                              {u.role === 'admin' ? '👑 Admin' : '👁️ Empleado'}
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-zinc-500 font-mono">{u.cedula || "-"}</td>
-                          <td className="py-3 px-4 text-right">
-                            <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-zinc-500 hover:text-red-400 transition-colors">Eliminar</button>
+                          <td className="py-4 px-5 text-slate-400 font-mono text-xs">{u.cedula || "-"}</td>
+                          <td className="py-4 px-5 text-right">
+                            <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-red-400 hover:text-white text-xs font-bold px-4 py-2 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-all">
+                              Revocar
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -708,42 +719,50 @@ export default function App() {
           </div>
         ) : (
           <div className="space-y-6 max-w-5xl mx-auto">
-            <div className="bg-[#0c0c0e] border border-white/5 p-4 rounded-[16px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <h3 className="text-zinc-300 text-sm font-medium">Analíticas Mensuales</h3>
-              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-1.5 text-zinc-200 text-xs focus:outline-none focus:border-violet-500 transition-all w-full sm:w-auto">
-                <option value="all">Historico global</option>
-                {availableMonths.map((m) => <option key={m} value={m}>{m}</option>)}
+            <div className="bg-slate-900/90 border border-slate-800/80 p-6 rounded-[24px] shadow-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-white font-bold text-base">Filtrar Estadísticas</h3>
+                <p className="text-xs text-slate-400 mt-1">Selecciona un mes específico para analizar rendimiento</p>
+              </div>
+              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-950/60 border border-slate-800/80 rounded-2xl px-4 py-3 text-white text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all w-full sm:w-auto">
+                <option value="all">📅 Todos los meses (Histórico)</option>
+                {availableMonths.map((m) => <option key={m} value={m}>Mes: {m}</option>)}
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-[#0c0c0e] border border-white/5 p-6 rounded-[20px] flex items-center justify-between">
-                <div>
-                  <p className="text-zinc-500 text-[11px] uppercase tracking-widest font-medium mb-1">Total Horas</p>
-                  <h3 className="text-3xl font-semibold text-zinc-100">{totalHorasStats.toFixed(1)} <span className="text-lg text-zinc-600 font-normal">hrs</span></h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-slate-900/90 border border-slate-800/80 p-8 rounded-[24px] shadow-2xl flex items-center justify-between relative overflow-hidden">
+                <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full"></div>
+                <div className="relative z-10">
+                  <p className="text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">Horas del Periodo</p>
+                  <h3 className="text-4xl font-extrabold text-emerald-400">{totalHorasStats.toFixed(1)} <span className="text-xl text-emerald-500/50">hrs</span></h3>
                 </div>
+                <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 text-3xl shadow-inner relative z-10">⏱️</div>
               </div>
-              <div className="bg-[#0c0c0e] border border-white/5 p-6 rounded-[20px] flex items-center justify-between">
-                <div>
-                  <p className="text-zinc-500 text-[11px] uppercase tracking-widest font-medium mb-1">Total Jornadas</p>
-                  <h3 className="text-3xl font-semibold text-zinc-100">{recordsForStats.length}</h3>
+
+              <div className="bg-slate-900/90 border border-slate-800/80 p-8 rounded-[24px] shadow-2xl flex items-center justify-between relative overflow-hidden">
+                <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-indigo-500/10 blur-2xl rounded-full"></div>
+                <div className="relative z-10">
+                  <p className="text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">Jornadas Totales</p>
+                  <h3 className="text-4xl font-extrabold text-indigo-400">{recordsForStats.length}</h3>
                 </div>
+                <div className="w-16 h-16 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400 text-3xl shadow-inner relative z-10">📊</div>
               </div>
             </div>
 
-            <div className="bg-[#0c0c0e] border border-white/5 p-6 sm:p-8 rounded-[20px]">
-              <h3 className="text-zinc-100 text-sm font-medium mb-8">Rendimiento por Empleado</h3>
+            <div className="bg-slate-900/90 border border-slate-800/80 p-8 rounded-[24px] shadow-2xl">
+              <h3 className="text-white font-bold text-base mb-8">📈 Horas Totales por Trabajador</h3>
               {chartData.length === 0 ? (
-                <div className="py-12 flex justify-center"><span className="text-zinc-600 text-sm">Sin datos para graficar.</span></div>
+                <div className="py-16 flex justify-center"><span className="text-slate-500 text-sm font-medium">No hay datos suficientes para mostrar el gráfico.</span></div>
               ) : (
                 <div className="w-full h-80">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                      <XAxis dataKey="name" stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                      <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
-                      <Tooltip contentStyle={{ backgroundColor: "#18181b", borderColor: "#27272a", borderRadius: "12px", color: "#f4f4f5", fontSize: "12px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }} cursor={{fill: '#27272a', opacity: 0.4}} />
-                      <Bar dataKey="horas" fill="#f4f4f5" radius={[4, 4, 0, 0]} />
+                    <BarChart data={chartData} margin={{ top: 10, right: 30, left: -20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.4} vertical={false} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                      <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "16px", color: "#fff", fontSize: "13px", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.5)" }} cursor={{fill: '#1e293b', opacity: 0.4}} />
+                      <Bar dataKey="horas" fill="#6366f1" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
