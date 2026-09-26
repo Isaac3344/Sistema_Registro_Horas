@@ -45,30 +45,21 @@ export default function App() {
 
   const isReadOnly = userRole === "employee";
 
-  // Control de Inactividad (Cierre automático tras 15 minutos sin uso)
+  // Control de Inactividad (15 min)
   useEffect(() => {
     if (!token) return;
-
     let inactivityTimer;
-
     const logoutDueToInactivity = () => {
       alert("⚠️ Tu sesión ha expirado por inactividad.");
       handleLogout();
     };
-
     const resetTimer = () => {
       clearTimeout(inactivityTimer);
-      // 15 minutos = 15 * 60 * 1000 ms
       inactivityTimer = setTimeout(logoutDueToInactivity, 15 * 60 * 1000);
     };
-
-    // Eventos que reinician el contador de inactividad
     const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
     events.forEach(event => window.addEventListener(event, resetTimer));
-
-    // Iniciar temporizador al cargar
     resetTimer();
-
     return () => {
       clearTimeout(inactivityTimer);
       events.forEach(event => window.removeEventListener(event, resetTimer));
@@ -78,9 +69,7 @@ export default function App() {
   useEffect(() => {
     if (token) {
       loadRecords();
-      if (!isReadOnly) {
-        loadUsers();
-      }
+      if (!isReadOnly) loadUsers();
     }
   }, [token]);
 
@@ -90,9 +79,7 @@ export default function App() {
       const data = await fetchRecords();
       setRecords(data);
     } catch (err) {
-      if (err.message.includes("expirada") || err.message.includes("401")) {
-        handleLogout();
-      }
+      if (err.message.includes("expirada") || err.message.includes("401")) handleLogout();
     } finally {
       setLoading(false);
     }
@@ -120,9 +107,8 @@ export default function App() {
           method: "DELETE",
           headers: { "Authorization": `Bearer ${token}` }
         });
-        if (response.ok) {
-          loadUsers();
-        } else {
+        if (response.ok) loadUsers();
+        else {
           const errData = await response.json();
           alert("Error al eliminar usuario: " + (errData.detail || "Error desconocido"));
         }
@@ -141,20 +127,13 @@ export default function App() {
         response = await fetch("https://backend-registro-horas.onrender.com/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            username: usernameInput, 
-            password: passwordInput, 
-            admin_token: adminTokenInput 
-          })
+          body: JSON.stringify({ username: usernameInput, password: passwordInput, admin_token: adminTokenInput })
         });
       } else {
         response = await fetch("https://backend-registro-horas.onrender.com/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            username: usernameInput, 
-            password: passwordInput 
-          })
+          body: JSON.stringify({ username: usernameInput, password: passwordInput })
         });
       }
 
@@ -181,12 +160,7 @@ export default function App() {
       const response = await fetch("https://backend-registro-horas.onrender.com/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: empUsername,
-          password: empPassword,
-          role: "employee",
-          cedula: empCedula
-        })
+        body: JSON.stringify({ username: empUsername, password: empPassword, role: "employee", cedula: empCedula })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Error al crear empleado");
@@ -224,26 +198,14 @@ export default function App() {
     e.preventDefault();
     if (isReadOnly) return;
     try {
-      const recordData = {
-        worker_name: workerName,
-        work_date: workDate,
-        entry_time: entryTime,
-        exit_time: exitTime,
-        calculated_hours: calculatedHours,
-        cost_center: costCenter,
-        description: description,
-      };
-
+      const recordData = { worker_name: workerName, work_date: workDate, entry_time: entryTime, exit_time: exitTime, calculated_hours: calculatedHours, cost_center: costCenter, description: description };
       if (editingId) {
         await updateRecord(editingId, recordData);
         setEditingId(null);
       } else {
         await createRecord(recordData);
       }
-
-      setWorkerName("");
-      setCostCenter("");
-      setDescription("");
+      setWorkerName(""); setCostCenter(""); setDescription("");
       loadRecords();
     } catch (err) {
       alert("Error al guardar: " + err.message);
@@ -297,17 +259,9 @@ export default function App() {
   const filteredRecords = records.filter((rec) => {
     const worker = (rec.worker_name || rec.trabajador || "");
     const date = (rec.work_date || rec.fecha || "");
-
-    if (selectedWorkerFilter !== "all" && worker !== selectedWorkerFilter) {
-      return false;
-    }
-
-    if (filterType === "month" && selectedFilterValue) {
-      return date.startsWith(selectedFilterValue);
-    }
-    if (filterType === "week" && selectedFilterValue) {
-      return getWeekNumber(date) === selectedFilterValue;
-    }
+    if (selectedWorkerFilter !== "all" && worker !== selectedWorkerFilter) return false;
+    if (filterType === "month" && selectedFilterValue) return date.startsWith(selectedFilterValue);
+    if (filterType === "week" && selectedFilterValue) return getWeekNumber(date) === selectedFilterValue;
     return true;
   });
 
@@ -372,11 +326,10 @@ export default function App() {
 
     aoa.push(["", "", "", "", "TOTAL HORAS:", totalHorasSuma, "", ""]);
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
-
-    const headerStyle = { font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4F46E5" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const titleStyle = { font: { name: "Arial", sz: 14, bold: true, color: { rgb: "1E293B" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const cellStyle = { font: { name: "Arial", sz: 10 }, alignment: { vertical: "center" } };
-    const totalStyle = { font: { name: "Arial", sz: 11, bold: true }, fill: { fgColor: { rgb: "E2E8F0" } }, alignment: { horizontal: "right", vertical: "center" } };
+    const headerStyle = { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "18181B" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const titleStyle = { font: { name: "Arial", sz: 12, bold: true, color: { rgb: "09090B" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const cellStyle = { font: { name: "Arial", sz: 9 }, alignment: { vertical: "center" } };
+    const totalStyle = { font: { name: "Arial", sz: 10, bold: true }, fill: { fgColor: { rgb: "F4F4F5" } }, alignment: { horizontal: "right", vertical: "center" } };
 
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -398,93 +351,92 @@ export default function App() {
 
   const handleExportPDF = () => window.print();
 
-  // BARRERA DE SEGURIDAD ABSOLUTA: Si no hay token, se muestra exclusivamente la pantalla de Login
+  // ----- PANTALLA DE LOGIN (MODERNA Y MINIMALISTA) -----
   if (!token) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
+      <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-4 relative overflow-hidden font-sans selection:bg-violet-500/30">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-[400px] bg-violet-600/15 blur-[120px] rounded-full pointer-events-none"></div>
 
-        <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
-          <div className="text-center mb-6">
-            <div className="inline-flex p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-indigo-400 text-2xl mb-2">
-              🔒
+        <div className="bg-[#09090b]/80 backdrop-blur-2xl border border-white/5 p-8 sm:p-10 rounded-[24px] shadow-2xl w-full max-w-md relative z-10">
+          <div className="mb-8">
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#09090b] text-xl mb-4 font-bold">
+              AR
             </div>
-            <h1 className="text-2xl font-extrabold text-white">Acceso Seguro</h1>
-            <p className="text-slate-400 text-sm mt-1">Plataforma Protegida con Autenticación</p>
+            <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Iniciar Sesión</h1>
+            <p className="text-zinc-500 text-sm mt-1.5">Plataforma Segura de Horas</p>
           </div>
 
-          <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
+          <div className="flex bg-zinc-900/50 p-1 rounded-xl border border-white/5 mb-6">
             <button
               type="button"
               onClick={() => setLoginRoleType("admin")}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
-                loginRoleType === "admin" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
+              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                loginRoleType === "admin" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              👑 Administrador
+              Administrador
             </button>
             <button
               type="button"
               onClick={() => setLoginRoleType("employee")}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition ${
-                loginRoleType === "employee" ? "bg-emerald-600 text-white shadow" : "text-slate-400 hover:text-white"
+              className={`flex-1 py-2 rounded-lg text-xs font-medium transition-all ${
+                loginRoleType === "employee" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"
               }`}
             >
-              👁️ Empleado
+              Empleado
             </button>
           </div>
 
           {authError && (
-            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-center">
+            <div className="mb-5 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs text-center">
               {authError}
             </div>
           )}
 
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario</label>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Usuario</label>
               <input
                 type="text"
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600"
                 placeholder="Ingresa tu usuario"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
+              <label className="block text-xs font-medium text-zinc-400 mb-1.5">Contraseña</label>
               <input
                 type="password"
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-zinc-900/50 border border-white/10 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600"
                 placeholder="••••••••"
               />
             </div>
 
             {loginRoleType === "admin" && (
               <div>
-                <label className="block text-xs font-semibold text-indigo-400 uppercase mb-1">🔑 Token Secreto de Admin</label>
+                <label className="block text-xs font-medium text-violet-400 mb-1.5">Token Secreto</label>
                 <input
                   type="password"
                   required
                   value={adminTokenInput}
                   onChange={(e) => setAdminTokenInput(e.target.value)}
-                  className="w-full bg-slate-950 border border-indigo-500/50 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-400 transition"
-                  placeholder="Código token de seguridad"
+                  className="w-full bg-zinc-900/50 border border-violet-500/30 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400/50 transition-all placeholder:text-zinc-600"
+                  placeholder="Código de seguridad"
                 />
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm"
+              className="w-full mt-2 bg-zinc-100 hover:bg-white text-zinc-950 font-medium py-3 rounded-xl transition-all duration-200 text-sm active:scale-[0.98]"
             >
-              Iniciar Sesión Segura
+              Entrar al Sistema
             </button>
           </form>
         </div>
@@ -492,265 +444,172 @@ export default function App() {
     );
   }
 
+  // ----- PLATAFORMA PRINCIPAL (MODERNA Y MINIMALISTA) -----
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between print:hidden shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
-            AR
+    <div className="min-h-screen bg-[#09090b] text-zinc-200 flex flex-col font-sans selection:bg-violet-500/30">
+      
+      {/* Header Minimalista */}
+      <header className="bg-[#09090b]/80 backdrop-blur-md border-b border-white/5 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-40 print:hidden">
+        <div className="flex items-center justify-between w-full md:w-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-zinc-100 rounded-lg flex items-center justify-center text-[#09090b] font-bold text-xs">
+              AR
+            </div>
+            <div>
+              <h1 className="font-semibold text-zinc-100 text-sm tracking-tight">App Registro</h1>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <p className="text-[10px] font-medium text-zinc-500 uppercase tracking-widest">
+                  {isReadOnly ? "Modo Empleado" : "Administrador"}
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-white text-base">APP REGISTRO</h1>
-            <p className="text-xs text-slate-400">
-              {isReadOnly ? "👁️ Empleado (Vista)" : "Panel Administrador"}
-            </p>
-          </div>
+          <button onClick={handleLogout} className="md:hidden text-zinc-400 hover:text-zinc-200 text-xs font-medium">
+            Salir
+          </button>
         </div>
 
-        <div className="flex items-center bg-slate-950 p-1.5 rounded-xl border border-slate-800">
-          <button
-            onClick={() => setCurrentTab("gestion")}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
-              currentTab === "gestion" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            📋 Gestión
+        <div className="flex items-center bg-zinc-900/80 p-1 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto">
+          <button onClick={() => setCurrentTab("gestion")} className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${currentTab === "gestion" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}>
+            Gestión
           </button>
-          <button
-            onClick={() => setCurrentTab("estadisticas")}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
-              currentTab === "estadisticas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            📊 Estadísticas
+          <button onClick={() => setCurrentTab("estadisticas")} className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${currentTab === "estadisticas" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}>
+            Estadísticas
           </button>
           {!isReadOnly && (
-            <button
-              onClick={() => setCurrentTab("empleados")}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
-                currentTab === "empleados" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              👤 Accesos
+            <button onClick={() => setCurrentTab("empleados")} className={`flex-1 md:flex-none px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${currentTab === "empleados" ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"}`}>
+              Accesos
             </button>
           )}
         </div>
 
-        <button
-          onClick={handleLogout}
-          className="bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-semibold transition"
-        >
+        <button onClick={handleLogout} className="hidden md:block text-zinc-400 hover:text-zinc-200 text-xs font-medium transition-colors">
           Cerrar Sesión
         </button>
       </header>
 
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
         {currentTab === "gestion" ? (
           <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-6`}>
             
+            {/* Panel Izquierdo: Formulario */}
             {!isReadOnly && (
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit print:hidden">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-bold text-white text-sm">
-                    {editingId ? "✏️ Editar Registro" : "➕ Nuevo Registro"}
+              <div className="bg-[#0c0c0e] border border-white/5 p-6 rounded-[20px] h-fit print:hidden">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-medium text-zinc-100 text-sm">
+                    {editingId ? "Editar Registro" : "Nuevo Registro"}
                   </h2>
-                  <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg text-xs font-bold">
+                  <span className="text-zinc-400 text-xs font-mono bg-zinc-900 px-2 py-1 rounded-md border border-white/5">
                     {calculatedHours.toFixed(2)} hrs
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmitRecord} className="space-y-3.5">
+                <form onSubmit={handleSubmitRecord} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Trabajador *</label>
-                    <input
-                      type="text"
-                      required
-                      value={workerName}
-                      onChange={(e) => setWorkerName(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                      placeholder="Ej. Juan Pérez"
-                    />
+                    <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Trabajador</label>
+                    <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600" placeholder="Nombre completo" />
                   </div>
-
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Fecha</label>
-                    <input
-                      type="date"
-                      required
-                      value={workDate}
-                      onChange={(e) => setWorkDate(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                    />
+                    <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Fecha</label>
+                    <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all" />
                   </div>
-
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Entrada</label>
-                      <input
-                        type="time"
-                        required
-                        value={entryTime}
-                        onChange={(e) => setEntryTime(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                      />
+                      <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Entrada</label>
+                      <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Salida</label>
-                      <input
-                        type="time"
-                        required
-                        value={exitTime}
-                        onChange={(e) => setExitTime(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                      />
+                      <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Salida</label>
+                      <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all" />
                     </div>
                   </div>
-
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Centro de Costo / Cédula *</label>
-                    <input
-                      type="text"
-                      required
-                      value={costCenter}
-                      onChange={(e) => setCostCenter(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                      placeholder="Cédula del empleado"
-                    />
+                    <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Cédula / CC</label>
+                    <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600" placeholder="Ej. 1700000000" />
                   </div>
-
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Descripción</label>
-                    <textarea
-                      rows="2"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                      placeholder="Detalle de tareas..."
-                    ></textarea>
+                    <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Descripción</label>
+                    <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-zinc-200 text-sm focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/50 transition-all placeholder:text-zinc-600 resize-none" placeholder="Opcional..."></textarea>
                   </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition text-sm"
-                  >
-                    {editingId ? "Actualizar Registro" : "Guardar Registro"}
+                  <button type="submit" className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-medium py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98]">
+                    {editingId ? "Guardar Cambios" : "Crear Registro"}
                   </button>
                 </form>
               </div>
             )}
 
-            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between`}>
+            {/* Panel Derecho: Historial */}
+            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-[#0c0c0e] border border-white/5 p-6 sm:p-8 rounded-[20px] flex flex-col justify-between`}>
               <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 print:hidden">
-                  <div>
-                    <h2 className="font-bold text-white text-base">Historial de Registros</h2>
-                    <p className="text-xs text-slate-400">Consulta y exporta tus jornadas</p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button onClick={handleExportExcel} className="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
-                      📊 Excel ({filteredRecords.length})
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
+                  <h2 className="font-medium text-zinc-100 text-sm">Historial de Registros</h2>
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button onClick={handleExportExcel} className="bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
+                      Descargar Excel
                     </button>
-                    <button onClick={handleExportPDF} className="bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 text-rose-400 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
-                      📄 PDF
+                    <button onClick={handleExportPDF} className="bg-zinc-900 hover:bg-zinc-800 border border-white/5 text-zinc-300 px-3 py-1.5 rounded-lg text-xs font-medium transition-all">
+                      Imprimir PDF
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 print:hidden">
-                  <select
-                    value={selectedWorkerFilter}
-                    onChange={(e) => {
-                      setSelectedWorkerFilter(e.target.value);
-                      setSelectedFilterValue("");
-                      setCurrentPage(1);
-                    }}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-indigo-500 transition"
-                  >
-                    <option value="all">👤 Todos los trabajadores</option>
-                    {uniqueWorkers.map(w => (
-                      <option key={w} value={w}>Trabajador: {w}</option>
-                    ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 print:hidden">
+                  <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-2 text-zinc-300 text-xs focus:outline-none focus:border-violet-500 transition-all">
+                    <option value="all">Todos los trabajadores</option>
+                    {uniqueWorkers.map(w => <option key={w} value={w}>{w}</option>)}
                   </select>
-
-                  <select
-                    value={filterType}
-                    onChange={(e) => {
-                      setFilterType(e.target.value);
-                      setSelectedFilterValue("");
-                      setCurrentPage(1);
-                    }}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-indigo-500 transition"
-                  >
-                    <option value="all">⚡ Todos los periodos</option>
-                    <option value="month">📅 Filtrar por Mes</option>
-                    <option value="week">📆 Filtrar por Semana</option>
+                  <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-2 text-zinc-300 text-xs focus:outline-none focus:border-violet-500 transition-all">
+                    <option value="all">Filtro de tiempo: Inactivo</option>
+                    <option value="month">Filtrar por Mes</option>
+                    <option value="week">Filtrar por Semana</option>
                   </select>
-
                   {filterType === "month" && (
-                    <select
-                      value={selectedFilterValue}
-                      onChange={(e) => {
-                        setSelectedFilterValue(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-indigo-500 transition"
-                    >
-                      <option value="">Selecciona el mes...</option>
-                      {availableMonthsForWorker.map(m => (
-                        <option key={m} value={m}>Mes: {m}</option>
-                      ))}
+                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-2 text-zinc-300 text-xs focus:outline-none focus:border-violet-500 transition-all">
+                      <option value="">Seleccionar mes</option>
+                      {availableMonthsForWorker.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   )}
-
                   {filterType === "week" && (
-                    <select
-                      value={selectedFilterValue}
-                      onChange={(e) => {
-                        setSelectedFilterValue(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-indigo-500 transition"
-                    >
-                      <option value="">Selecciona la semana...</option>
-                      {availableWeeksForWorker.map(w => (
-                        <option key={w} value={w}>Semana: {w}</option>
-                      ))}
+                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-2 text-zinc-300 text-xs focus:outline-none focus:border-violet-500 transition-all">
+                      <option value="">Seleccionar semana</option>
+                      {availableWeeksForWorker.map(w => <option key={w} value={w}>{w}</option>)}
                     </select>
                   )}
                 </div>
 
                 {loading ? (
-                  <p className="text-center text-slate-500 py-8 text-sm">Cargando registros...</p>
+                  <div className="py-12 flex justify-center"><span className="text-zinc-600 text-sm">Cargando datos...</span></div>
                 ) : filteredRecords.length === 0 ? (
-                  <p className="text-center text-slate-500 py-8 text-sm">No se encontraron registros para este filtro.</p>
+                  <div className="py-12 flex justify-center"><span className="text-zinc-600 text-sm">No se encontraron resultados.</span></div>
                 ) : (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto rounded-xl border border-white/5">
                     <table className="w-full text-left border-collapse min-w-[650px]">
                       <thead>
-                        <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
-                          <th className="pb-3 px-3">Trabajador</th>
-                          <th className="pb-3 px-3">Fecha</th>
-                          <th className="pb-3 px-3">Horario</th>
-                          <th className="pb-3 px-3">Horas</th>
-                          <th className="pb-3 px-3">Centro Costo</th>
-                          <th className="pb-3 px-3">Descripción</th>
-                          {!isReadOnly && <th className="pb-3 px-3 text-right print:hidden">Acciones</th>}
+                        <tr className="bg-zinc-900/30 text-zinc-500 text-[10px] font-medium uppercase tracking-widest border-b border-white/5">
+                          <th className="py-3 px-4">Trabajador</th>
+                          <th className="py-3 px-4">Fecha</th>
+                          <th className="py-3 px-4">Horario</th>
+                          <th className="py-3 px-4">Total</th>
+                          <th className="py-3 px-4">Cédula</th>
+                          <th className="py-3 px-4">Nota</th>
+                          {!isReadOnly && <th className="py-3 px-4 text-right print:hidden">Acciones</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                      <tbody className="divide-y divide-white/5 text-xs">
                         {currentRecords.map((rec) => (
-                          <tr key={rec.id} className="hover:bg-slate-800/40 transition">
-                            <td className="py-3 px-3 font-semibold text-white">{rec.worker_name || rec.trabajador}</td>
-                            <td className="py-3 px-3 text-slate-300">{rec.work_date || rec.fecha}</td>
-                            <td className="py-3 px-3 text-slate-400 text-xs">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
-                            <td className="py-3 px-3 font-bold text-emerald-400">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs</td>
-                            <td className="py-3 px-3 text-slate-400 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
-                            <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">{rec.description || rec.descripcion || "-"}</td>
+                          <tr key={rec.id} className="hover:bg-zinc-900/20 transition-colors group">
+                            <td className="py-3.5 px-4 font-medium text-zinc-200">{rec.worker_name || rec.trabajador}</td>
+                            <td className="py-3.5 px-4 text-zinc-400">{rec.work_date || rec.fecha}</td>
+                            <td className="py-3.5 px-4 text-zinc-500">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
+                            <td className="py-3.5 px-4"><span className="bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded border border-white/5">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)}h</span></td>
+                            <td className="py-3.5 px-4 text-zinc-500">{rec.cost_center || rec.centro_costo || "-"}</td>
+                            <td className="py-3.5 px-4 text-zinc-500 max-w-[120px] truncate" title={rec.description || rec.descripcion}>{rec.description || rec.descripcion || "-"}</td>
                             {!isReadOnly && (
-                              <td className="py-3 px-3 text-right space-x-2 print:hidden whitespace-nowrap">
-                                <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 rounded-lg">Editar</button>
-                                <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2.5 py-1 bg-red-500/10 rounded-lg">Borrar</button>
+                              <td className="py-3.5 px-4 text-right space-x-2 print:hidden opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => handleEdit(rec)} className="text-zinc-400 hover:text-white transition-colors">Editar</button>
+                                <span className="text-zinc-700">|</span>
+                                <button onClick={() => handleDelete(rec.id)} className="text-zinc-400 hover:text-red-400 transition-colors">Eliminar</button>
                               </td>
                             )}
                           </tr>
@@ -762,22 +621,14 @@ export default function App() {
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-4 print:hidden">
-                  <button
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                  >
+                <div className="flex items-center justify-between border-t border-white/5 pt-4 mt-6 print:hidden">
+                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="text-zinc-400 hover:text-white disabled:opacity-30 text-xs font-medium transition-colors">
                     ← Anterior
                   </button>
-                  <span className="text-xs text-slate-400 font-medium">
-                    Página <strong className="text-white">{currentPage}</strong> de <strong className="text-white">{totalPages}</strong>
+                  <span className="text-[11px] text-zinc-500 font-medium">
+                    <span className="text-zinc-200">{currentPage}</span> / {totalPages}
                   </span>
-                  <button
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                  >
+                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="text-zinc-400 hover:text-white disabled:opacity-30 text-xs font-medium transition-colors">
                     Siguiente →
                   </button>
                 </div>
@@ -786,98 +637,66 @@ export default function App() {
           </div>
         ) : currentTab === "empleados" && !isReadOnly ? (
           <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h2 className="text-base font-bold text-white mb-1.5">👤 Crear Acceso para Empleado</h2>
-              <p className="text-xs text-slate-400 mb-6">Genera un usuario de solo vista vinculado a su número de cédula.</p>
+            <div className="bg-[#0c0c0e] border border-white/5 p-6 sm:p-8 rounded-[20px]">
+              <h2 className="text-sm font-medium text-zinc-100 mb-1">Generar Acceso</h2>
+              <p className="text-xs text-zinc-500 mb-6">Crea cuentas limitadas para visualización.</p>
 
               {empSuccessMsg && (
-                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs text-center">
+                <div className="mb-6 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs text-center font-medium">
                   {empSuccessMsg}
                 </div>
               )}
 
-              <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Usuario</label>
-                  <input
-                    type="text"
-                    required
-                    value={empUsername}
-                    onChange={(e) => setEmpUsername(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                    placeholder="Ej. juan_emp"
-                  />
+              <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="md:col-span-1">
+                  <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Usuario</label>
+                  <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2 text-zinc-200 text-sm focus:outline-none focus:border-violet-500" placeholder="Ej. juan" />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Contraseña</label>
-                  <input
-                    type="password"
-                    required
-                    value={empPassword}
-                    onChange={(e) => setEmpPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                    placeholder="••••••••"
-                  />
+                <div className="md:col-span-1">
+                  <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Contraseña</label>
+                  <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2 text-zinc-200 text-sm focus:outline-none focus:border-violet-500" placeholder="••••••••" />
                 </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Cédula del Empleado *</label>
-                  <input
-                    type="text"
-                    required
-                    value={empCedula}
-                    onChange={(e) => setEmpCedula(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-                    placeholder="Ej. 1728394850"
-                  />
+                <div className="md:col-span-1">
+                  <label className="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1.5">Cédula</label>
+                  <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className="w-full bg-zinc-900/50 border border-white/5 rounded-xl px-4 py-2 text-zinc-200 text-sm focus:outline-none focus:border-violet-500" placeholder="17000000" />
                 </div>
-
-                <div className="md:col-span-3">
-                  <button
-                    type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition text-sm"
-                  >
-                    Crear Cuenta de Empleado
+                <div className="md:col-span-1">
+                  <button type="submit" className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-medium py-2 rounded-xl transition-all text-sm">
+                    Crear Cuenta
                   </button>
                 </div>
               </form>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h2 className="text-base font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
+            <div className="bg-[#0c0c0e] border border-white/5 p-6 sm:p-8 rounded-[20px]">
+              <h2 className="text-sm font-medium text-zinc-100 mb-6">Directorio de Accesos</h2>
               {usersList.length === 0 ? (
-                <p className="text-slate-500 text-sm text-center py-4">No hay usuarios cargados.</p>
+                <div className="py-8 flex justify-center"><span className="text-zinc-600 text-sm">No hay usuarios registrados.</span></div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse min-w-[500px]">
+                <div className="overflow-x-auto rounded-xl border border-white/5">
+                  <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
-                        <th className="pb-3 px-3">ID</th>
-                        <th className="pb-3 px-3">Usuario</th>
-                        <th className="pb-3 px-3">Rol</th>
-                        <th className="pb-3 px-3">Cédula Vinculada</th>
-                        <th className="pb-3 px-3 text-right">Acciones</th>
+                      <tr className="bg-zinc-900/30 text-zinc-500 text-[10px] font-medium uppercase tracking-widest border-b border-white/5">
+                        <th className="py-3 px-4">ID</th>
+                        <th className="py-3 px-4">Usuario</th>
+                        <th className="py-3 px-4">Rol</th>
+                        <th className="py-3 px-4">Cédula</th>
+                        <th className="py-3 px-4 text-right">Revocar</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
+                    <tbody className="divide-y divide-white/5 text-xs">
                       {usersList.map((u) => (
-                        <tr key={u.id} className="hover:bg-slate-800/40 transition">
-                          <td className="py-3 px-3 text-slate-400">#{u.id}</td>
-                          <td className="py-3 px-3 font-semibold text-white">{u.username}</td>
-                          <td className="py-3 px-3">
-                            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
-                              {u.role === 'admin' ? '👑 Admin' : '👁️ Empleado'}
+                        <tr key={u.id} className="hover:bg-zinc-900/20 transition-colors">
+                          <td className="py-3 px-4 text-zinc-500">#{u.id}</td>
+                          <td className="py-3 px-4 font-medium text-zinc-200">{u.username}</td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider ${u.role === 'admin' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'bg-zinc-800 text-zinc-400 border-white/5'}`}>
+                              {u.role === 'admin' ? 'Admin' : 'Empleado'}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-slate-300 font-mono text-xs">{u.cedula || "-"}</td>
-                          <td className="py-3 px-3 text-right">
-                            <button
-                              onClick={() => handleDeleteUser(u.id, u.username)}
-                              className="text-red-400 hover:text-red-300 text-xs font-semibold px-3 py-1 bg-red-500/10 rounded-lg transition"
-                            >
-                              Eliminar
-                            </button>
+                          <td className="py-3 px-4 text-zinc-500 font-mono">{u.cedula || "-"}</td>
+                          <td className="py-3 px-4 text-right">
+                            <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-zinc-500 hover:text-red-400 transition-colors">Eliminar</button>
                           </td>
                         </tr>
                       ))}
@@ -889,56 +708,42 @@ export default function App() {
           </div>
         ) : (
           <div className="space-y-6 max-w-5xl mx-auto">
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex items-center justify-between">
-              <div>
-                <h3 className="text-white font-bold text-base">Filtrar Estadísticas</h3>
-                <p className="text-xs text-slate-400">Selecciona un mes específico</p>
-              </div>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-xs focus:outline-none focus:border-indigo-500"
-              >
-                <option value="all">📅 Todos los meses (Histórico)</option>
-                {availableMonths.map((m) => (
-                  <option key={m} value={m}>Mes: {m}</option>
-                ))}
+            <div className="bg-[#0c0c0e] border border-white/5 p-4 rounded-[16px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <h3 className="text-zinc-300 text-sm font-medium">Analíticas Mensuales</h3>
+              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-zinc-900/50 border border-white/5 rounded-lg px-3 py-1.5 text-zinc-200 text-xs focus:outline-none focus:border-violet-500 transition-all w-full sm:w-auto">
+                <option value="all">Historico global</option>
+                {availableMonths.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
+              <div className="bg-[#0c0c0e] border border-white/5 p-6 rounded-[20px] flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-xs font-medium">Horas del Periodo</p>
-                  <h3 className="text-3xl font-extrabold text-emerald-400 mt-1">{totalHorasStats.toFixed(1)} hrs</h3>
+                  <p className="text-zinc-500 text-[11px] uppercase tracking-widest font-medium mb-1">Total Horas</p>
+                  <h3 className="text-3xl font-semibold text-zinc-100">{totalHorasStats.toFixed(1)} <span className="text-lg text-zinc-600 font-normal">hrs</span></h3>
                 </div>
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-2xl">⏱️</div>
               </div>
-
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
+              <div className="bg-[#0c0c0e] border border-white/5 p-6 rounded-[20px] flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-xs font-medium">Jornadas en el Periodo</p>
-                  <h3 className="text-3xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
+                  <p className="text-zinc-500 text-[11px] uppercase tracking-widest font-medium mb-1">Total Jornadas</p>
+                  <h3 className="text-3xl font-semibold text-zinc-100">{recordsForStats.length}</h3>
                 </div>
-                <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-2xl">📊</div>
               </div>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h3 className="text-white font-bold text-base mb-4">📈 Horas Totales por Trabajador</h3>
+            <div className="bg-[#0c0c0e] border border-white/5 p-6 sm:p-8 rounded-[20px]">
+              <h3 className="text-zinc-100 text-sm font-medium mb-8">Rendimiento por Empleado</h3>
               {chartData.length === 0 ? (
-                <p className="text-center text-slate-500 py-8 text-sm">No hay datos suficientes para mostrar el gráfico.</p>
+                <div className="py-12 flex justify-center"><span className="text-zinc-600 text-sm">Sin datos para graficar.</span></div>
               ) : (
-                <div className="w-full h-72">
+                <div className="w-full h-80">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                      <YAxis stroke="#94a3b8" fontSize={12} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155", borderRadius: "12px", color: "#fff" }} 
-                      />
-                      <Bar dataKey="horas" fill="#6366f1" radius={[8, 8, 0, 0]} />
+                    <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                      <XAxis dataKey="name" stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                      <YAxis stroke="#71717a" fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: "#18181b", borderColor: "#27272a", borderRadius: "12px", color: "#f4f4f5", fontSize: "12px", boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.5)" }} cursor={{fill: '#27272a', opacity: 0.4}} />
+                      <Bar dataKey="horas" fill="#f4f4f5" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
