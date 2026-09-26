@@ -11,11 +11,42 @@ import {
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem("token") || "");
   const [userRole, setUserRole] = useState(localStorage.getItem("userRole") || "admin");
+  const [currentUsername, setCurrentUsername] = useState(localStorage.getItem("currentUsername") || "");
+  
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [adminTokenInput, setAdminTokenInput] = useState("");
   const [loginRoleType, setLoginRoleType] = useState("admin");
   const [authError, setAuthError] = useState("");
+
+  // Estado para el carrusel del Login
+  const [loginSlide, setLoginSlide] = useState(0);
+  const loginSlidesData = [
+    {
+      title: "¡Bienvenido a JornadaPro!",
+      desc: "Control profesional de jornadas laborales y horas de trabajo en tiempo real.",
+      icon: "📊"
+    },
+    {
+      title: "Gestión Multi-Usuario",
+      desc: "Administra accesos seguros para empleados y supervisores de forma ágil.",
+      icon: "👥"
+    },
+    {
+      title: "Reportes Inteligentes",
+      desc: "Exporta reportes detallados en Excel y PDF listos para nómina y costos.",
+      icon: "📈"
+    }
+  ];
+
+  useEffect(() => {
+    if (!token) {
+      const interval = setInterval(() => {
+        setLoginSlide((prev) => (prev + 1) % loginSlidesData.length);
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [token]);
 
   const [currentTab, setCurrentTab] = useState("gestion");
   const [records, setRecords] = useState([]);
@@ -42,6 +73,11 @@ export default function App() {
   const [empPassword, setEmpPassword] = useState("");
   const [empCedula, setEmpCedula] = useState("");
   const [empSuccessMsg, setEmpSuccessMsg] = useState("");
+
+  // Estados para Perfil de Usuario
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [profileMsg, setProfileMsg] = useState("");
 
   const isReadOnly = userRole === "employee";
 
@@ -143,8 +179,11 @@ export default function App() {
       const assignedRole = data.role || "admin";
       setToken(data.token);
       setUserRole(assignedRole);
+      setCurrentUsername(usernameInput);
       localStorage.setItem("token", data.token);
       localStorage.setItem("userRole", assignedRole);
+      localStorage.setItem("currentUsername", usernameInput);
+
       setUsernameInput("");
       setPasswordInput("");
       setAdminTokenInput("");
@@ -175,11 +214,36 @@ export default function App() {
     }
   };
 
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    setProfileMsg("");
+    try {
+      const response = await fetch("https://backend-registro-horas.onrender.com/change-password", {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ old_password: oldPassword, new_password: newPassword })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "Error al actualizar contraseña");
+      
+      setProfileMsg("¡Contraseña actualizada con éxito!");
+      setOldPassword("");
+      setNewPassword("");
+    } catch (err) {
+      setProfileMsg("Error: " + err.message);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("currentUsername");
     setToken("");
     setUserRole("admin");
+    setCurrentUsername("");
     setRecords([]);
   };
 
@@ -337,102 +401,130 @@ export default function App() {
 
   const handleExportPDF = () => window.print();
 
-  // ----- PANTALLA DE LOGIN -----
+  // ----- PANTALLA DE LOGIN CON ANIMACIÓN DE DOS COLUMNAS -----
   if (!token) {
     return (
       <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4 font-sans text-slate-800">
-        <div className="bg-white shadow-[0_20px_40px_rgba(0,0,0,0.2)] border border-slate-100 p-8 sm:p-10 rounded-[2.5rem] w-full max-w-md">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-600/30">
-              J
-            </div>
-            <span className="font-extrabold text-slate-900 text-lg tracking-tight">JornadaPro</span>
-          </div>
+        
+        {/* Tarjeta contenedora dividida */}
+        <div className="bg-white shadow-[0_25px_50px_rgba(0,0,0,0.3)] border border-slate-100 rounded-[2.5rem] w-full max-w-4xl overflow-hidden flex flex-col md:flex-row">
+          
+          {/* Columna Izquierda: Panel Animado / Carrusel */}
+          <div className="w-full md:w-1/2 bg-blue-600 text-white p-10 flex flex-col justify-between relative overflow-hidden">
+            <div className="absolute -top-12 -left-12 w-48 h-48 bg-blue-500 rounded-full opacity-50 blur-2xl"></div>
+            <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-indigo-700 rounded-full opacity-50 blur-2xl"></div>
 
-          <div className="mb-8">
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Iniciar Sesión</h1>
-            <p className="text-slate-500 text-xs font-bold mt-1">Control de Jornadas y Horas</p>
-          </div>
-
-          <div className="flex bg-slate-100 p-1 rounded-2xl mb-6">
-            <button
-              type="button"
-              onClick={() => setLoginRoleType("admin")}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                loginRoleType === "admin" ? "bg-white shadow-md text-blue-600" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Administrador
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginRoleType("employee")}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                loginRoleType === "employee" ? "bg-white shadow-md text-blue-600" : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Empleado
-            </button>
-          </div>
-
-          {authError && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-2xl text-red-500 text-xs font-bold text-center">
-              {authError}
-            </div>
-          )}
-
-          <form onSubmit={handleAuthSubmit} className="space-y-4">
-            <div>
-              <label className="block text-[11px] font-black text-slate-700 uppercase mb-1.5">Usuario</label>
-              <input
-                type="text"
-                required
-                value={usernameInput}
-                onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-600 transition-all placeholder:text-slate-400"
-                placeholder="Ingresa tu usuario"
-              />
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-blue-600 font-black text-lg shadow-lg">
+                J
+              </div>
+              <span className="font-black text-xl tracking-tight text-white">JornadaPro</span>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-black text-slate-700 uppercase mb-1.5">Contraseña</label>
-              <input
-                type="password"
-                required
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-600 transition-all placeholder:text-slate-400"
-                placeholder="••••••••"
-              />
+            <div className="my-auto py-10 relative z-10 transition-all duration-500">
+              <div className="text-4xl mb-4">{loginSlidesData[loginSlide].icon}</div>
+              <h2 className="text-2xl md:text-3xl font-black mb-3 leading-tight">{loginSlidesData[loginSlide].title}</h2>
+              <p className="text-blue-100 text-sm font-medium leading-relaxed">{loginSlidesData[loginSlide].desc}</p>
             </div>
 
-            {loginRoleType === "admin" && (
-              <div>
-                <label className="block text-[11px] font-black text-blue-700 uppercase mb-1.5">🔑 Token de Seguridad</label>
-                <input
-                  type="password"
-                  required
-                  value={adminTokenInput}
-                  onChange={(e) => setAdminTokenInput(e.target.value)}
-                  className="w-full bg-blue-50 border border-blue-300 rounded-2xl px-4 py-3.5 text-sm text-blue-900 font-bold focus:outline-none focus:border-blue-600 transition-all placeholder:text-blue-400"
-                  placeholder="Token secreto"
+            <div className="flex items-center gap-2 relative z-10">
+              {loginSlidesData.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setLoginSlide(idx)}
+                  className={`h-2.5 rounded-full transition-all ${loginSlide === idx ? "w-8 bg-white" : "w-2.5 bg-blue-400"}`}
                 />
+              ))}
+            </div>
+          </div>
+
+          {/* Columna Derecha: Formulario de Login */}
+          <div className="w-full md:w-1/2 p-8 sm:p-12 flex flex-col justify-center">
+            <div className="mb-6">
+              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Iniciar Sesión</h1>
+              <p className="text-slate-400 text-xs font-semibold mt-1">Accede al panel de control de jornadas</p>
+            </div>
+
+            <div className="flex bg-slate-100 p-1 rounded-2xl mb-6">
+              <button
+                type="button"
+                onClick={() => setLoginRoleType("admin")}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                  loginRoleType === "admin" ? "bg-white shadow-md text-blue-600" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                Administrador
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginRoleType("employee")}
+                className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all ${
+                  loginRoleType === "employee" ? "bg-white shadow-md text-blue-600" : "text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                Empleado
+              </button>
+            </div>
+
+            {authError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-2xl text-red-500 text-xs font-bold text-center">
+                {authError}
               </div>
             )}
 
-            <button
-              type="submit"
-              className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-xl shadow-blue-600/30 transition-all text-sm"
-            >
-              Iniciar Sesión
-            </button>
-          </form>
+            <form onSubmit={handleAuthSubmit} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">Usuario</label>
+                <input
+                  type="text"
+                  required
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-600"
+                  placeholder="Tu usuario"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-black text-slate-500 uppercase mb-1">Contraseña</label>
+                <input
+                  type="password"
+                  required
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold focus:outline-none focus:border-blue-600"
+                  placeholder="••••••••"
+                />
+              </div>
+
+              {loginRoleType === "admin" && (
+                <div>
+                  <label className="block text-[11px] font-black text-blue-600 uppercase mb-1">🔑 Token de Seguridad</label>
+                  <input
+                    type="password"
+                    required
+                    value={adminTokenInput}
+                    onChange={(e) => setAdminTokenInput(e.target.value)}
+                    className="w-full bg-blue-50/50 border border-blue-200 rounded-2xl px-4 py-3 text-sm text-blue-900 font-bold focus:outline-none focus:border-blue-600"
+                    placeholder="Token secreto"
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full mt-2 bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-2xl shadow-lg shadow-blue-600/30 transition-all text-sm"
+              >
+                Ingresar al Sistema
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ----- PLATAFORMA PRINCIPAL -----
+  // ----- PLATAFORMA PRINCIPAL CON PERFIL DE USUARIO -----
   return (
     <div className="min-h-screen bg-[#f1f5f9] text-slate-900 flex flex-col md:flex-row font-sans">
       
@@ -469,12 +561,18 @@ export default function App() {
                 <span>👥</span> <span className="hidden sm:inline">Accesos / Usuarios</span><span className="sm:hidden">Usuarios</span>
               </button>
             )}
+            <button 
+              onClick={() => setCurrentTab("perfil")} 
+              className={`flex-1 md:flex-none flex items-center gap-3 px-4 py-3 rounded-2xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${currentTab === 'perfil' ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-600/30' : 'text-slate-200 hover:bg-slate-800 hover:text-white'}`}
+            >
+              <span>⚙️</span> <span className="hidden sm:inline">Mi Perfil</span><span className="sm:hidden">Perfil</span>
+            </button>
           </nav>
         </div>
 
         <div className="hidden md:block mt-8 bg-gradient-to-br from-blue-600 to-indigo-700 p-5 rounded-3xl text-white shadow-lg">
-          <p className="text-xs font-bold text-blue-200 uppercase">Modo Activo</p>
-          <p className="font-black text-sm mt-1">{isReadOnly ? "Empleado" : "Administrador"}</p>
+          <p className="text-xs font-bold text-blue-200 uppercase">Sesión Activa</p>
+          <p className="font-black text-sm mt-1">{currentUsername || userRole}</p>
           <button onClick={handleLogout} className="mt-4 w-full bg-white text-slate-900 font-black py-2.5 rounded-xl text-xs hover:bg-slate-100 transition-all shadow-md">
             Cerrar Sesión
           </button>
@@ -486,17 +584,17 @@ export default function App() {
         
         <header className="bg-white border-b border-slate-200 px-6 sm:px-8 py-4 flex items-center justify-between sticky top-0 z-40 print:hidden shadow-sm">
           <div>
-            <h1 className="text-lg sm:text-xl font-black text-slate-900">¡Bienvenido de nuevo!</h1>
+            <h1 className="text-lg sm:text-xl font-black text-slate-900">¡Bienvenido de nuevo, {currentUsername || userRole}!</h1>
             <p className="text-xs text-slate-600 font-bold">Resumen general y control de jornadas</p>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex items-center gap-3 bg-slate-50 border border-slate-200 px-4 py-2 rounded-2xl">
               <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
-                {userRole === 'admin' ? 'A' : 'E'}
+                {(currentUsername || userRole).charAt(0).toUpperCase()}
               </div>
               <div className="text-left">
-                <p className="text-xs font-black text-slate-900">Panel Central</p>
+                <p className="text-xs font-black text-slate-900">{currentUsername || "Usuario"}</p>
                 <p className="text-[10px] text-slate-600 font-bold capitalize">{userRole}</p>
               </div>
             </div>
@@ -687,7 +785,6 @@ export default function App() {
                 </form>
               </div>
 
-              {/* Directorio de Usuarios */}
               <div className="bg-white border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm">
                 <h2 className="text-lg font-black text-slate-900 mb-4">Directorio de Usuarios</h2>
                 {usersList.length === 0 ? (
@@ -724,6 +821,44 @@ export default function App() {
                     </table>
                   </div>
                 )}
+              </div>
+            </div>
+          ) : currentTab === "perfil" ? (
+            <div className="space-y-6 max-w-2xl mx-auto">
+              <div className="bg-white border border-slate-200 p-8 rounded-[2rem] shadow-sm">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-2xl shadow-lg">
+                    {(currentUsername || userRole).charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900">{currentUsername || "Usuario"}</h2>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-0.5">Rol: {userRole === 'admin' ? 'Administrador' : 'Empleado'}</p>
+                  </div>
+                </div>
+
+                <hr className="border-slate-100 my-6" />
+
+                <h3 className="text-base font-black text-slate-900 mb-4">Cambiar Contraseña</h3>
+
+                {profileMsg && (
+                  <div className={`mb-4 p-3 rounded-2xl text-xs font-black text-center ${profileMsg.includes("éxito") ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-red-50 text-red-600 border border-red-200"}`}>
+                    {profileMsg}
+                  </div>
+                )}
+
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Contraseña Actual</label>
+                    <input type="password" required value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold" placeholder="••••••••" />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-black text-slate-700 uppercase mb-1">Nueva Contraseña</label>
+                    <input type="password" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3 text-sm text-slate-900 font-bold" placeholder="••••••••" />
+                  </div>
+                  <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-3.5 rounded-2xl transition-all text-sm shadow-lg shadow-blue-600/30">
+                    Actualizar Contraseña
+                  </button>
+                </form>
               </div>
             </div>
           ) : (
