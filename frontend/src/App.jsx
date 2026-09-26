@@ -45,6 +45,36 @@ export default function App() {
 
   const isReadOnly = userRole === "employee";
 
+  // Control de Inactividad (Cierre automático tras 15 minutos sin uso)
+  useEffect(() => {
+    if (!token) return;
+
+    let inactivityTimer;
+
+    const logoutDueToInactivity = () => {
+      alert("⚠️ Tu sesión ha expirado por inactividad.");
+      handleLogout();
+    };
+
+    const resetTimer = () => {
+      clearTimeout(inactivityTimer);
+      // 15 minutos = 15 * 60 * 1000 ms
+      inactivityTimer = setTimeout(logoutDueToInactivity, 15 * 60 * 1000);
+    };
+
+    // Eventos que reinician el contador de inactividad
+    const events = ["mousemove", "keydown", "click", "scroll", "touchstart"];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+
+    // Iniciar temporizador al cargar
+    resetTimer();
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      events.forEach(event => window.removeEventListener(event, resetTimer));
+    };
+  }, [token]);
+
   useEffect(() => {
     if (token) {
       loadRecords();
@@ -368,19 +398,20 @@ export default function App() {
 
   const handleExportPDF = () => window.print();
 
+  // BARRERA DE SEGURIDAD ABSOLUTA: Si no hay token, se muestra exclusivamente la pantalla de Login
   if (!token) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 bg-indigo-600/30 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }}></div>
 
-        <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
+        <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md relative z-10">
           <div className="text-center mb-6">
-            <div className="inline-flex p-3 bg-gradient-to-tr from-indigo-500/20 to-emerald-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 text-2xl mb-2 shadow-inner">
-              ⚡
+            <div className="inline-flex p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-indigo-400 text-2xl mb-2">
+              🔒
             </div>
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Iniciar Sesión</h1>
-            <p className="text-slate-400 text-sm mt-1">Plataforma Profesional de Horas</p>
+            <h1 className="text-2xl font-extrabold text-white">Acceso Seguro</h1>
+            <p className="text-slate-400 text-sm mt-1">Plataforma Protegida con Autenticación</p>
           </div>
 
           <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-4">
@@ -418,7 +449,7 @@ export default function App() {
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
                 placeholder="Ingresa tu usuario"
               />
             </div>
@@ -430,7 +461,7 @@ export default function App() {
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
                 placeholder="••••••••"
               />
             </div>
@@ -443,7 +474,7 @@ export default function App() {
                   required
                   value={adminTokenInput}
                   onChange={(e) => setAdminTokenInput(e.target.value)}
-                  className="w-full bg-slate-950/80 border border-indigo-500/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-400 transition"
+                  className="w-full bg-slate-950 border border-indigo-500/50 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-400 transition"
                   placeholder="Código token de seguridad"
                 />
               </div>
@@ -451,9 +482,9 @@ export default function App() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition duration-200"
+              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-semibold py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition text-sm"
             >
-              Entrar al Sistema
+              Iniciar Sesión Segura
             </button>
           </form>
         </div>
@@ -463,23 +494,23 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between print:hidden">
+      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between print:hidden shadow-md">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
+          <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 font-bold">
             AR
           </div>
           <div>
-            <h1 className="font-bold text-white text-lg">APP REGISTRO</h1>
+            <h1 className="font-bold text-white text-base">APP REGISTRO</h1>
             <p className="text-xs text-slate-400">
-              {isReadOnly ? "👁️ Empleado (Solo Vista)" : "Panel de Administrador"}
+              {isReadOnly ? "👁️ Empleado (Vista)" : "Panel Administrador"}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+        <div className="flex items-center bg-slate-950 p-1.5 rounded-xl border border-slate-800">
           <button
             onClick={() => setCurrentTab("gestion")}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
               currentTab === "gestion" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
             }`}
           >
@@ -487,7 +518,7 @@ export default function App() {
           </button>
           <button
             onClick={() => setCurrentTab("estadisticas")}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
               currentTab === "estadisticas" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
             }`}
           >
@@ -496,18 +527,18 @@ export default function App() {
           {!isReadOnly && (
             <button
               onClick={() => setCurrentTab("empleados")}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+              className={`px-4 py-2 rounded-lg text-xs font-semibold transition ${
                 currentTab === "empleados" ? "bg-indigo-600 text-white shadow" : "text-slate-400 hover:text-white"
               }`}
             >
-              👤 Gestión de Accesos
+              👤 Accesos
             </button>
           )}
         </div>
 
         <button
           onClick={handleLogout}
-          className="bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold transition"
+          className="bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-xs font-semibold transition"
         >
           Cerrar Sesión
         </button>
@@ -520,7 +551,7 @@ export default function App() {
             {!isReadOnly && (
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl h-fit print:hidden">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="font-bold text-white text-base">
+                  <h2 className="font-bold text-white text-sm">
                     {editingId ? "✏️ Editar Registro" : "➕ Nuevo Registro"}
                   </h2>
                   <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg text-xs font-bold">
@@ -528,7 +559,7 @@ export default function App() {
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmitRecord} className="space-y-4">
+                <form onSubmit={handleSubmitRecord} className="space-y-3.5">
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Trabajador *</label>
                     <input
@@ -536,7 +567,7 @@ export default function App() {
                       required
                       value={workerName}
                       onChange={(e) => setWorkerName(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                       placeholder="Ej. Juan Pérez"
                     />
                   </div>
@@ -548,7 +579,7 @@ export default function App() {
                       required
                       value={workDate}
                       onChange={(e) => setWorkDate(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                     />
                   </div>
 
@@ -560,7 +591,7 @@ export default function App() {
                         required
                         value={entryTime}
                         onChange={(e) => setEntryTime(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                       />
                     </div>
                     <div>
@@ -570,7 +601,7 @@ export default function App() {
                         required
                         value={exitTime}
                         onChange={(e) => setExitTime(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                       />
                     </div>
                   </div>
@@ -582,7 +613,7 @@ export default function App() {
                       required
                       value={costCenter}
                       onChange={(e) => setCostCenter(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                       placeholder="Cédula del empleado"
                     />
                   </div>
@@ -593,14 +624,14 @@ export default function App() {
                       rows="2"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                       placeholder="Detalle de tareas..."
                     ></textarea>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition duration-200"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition text-sm"
                   >
                     {editingId ? "Actualizar Registro" : "Guardar Registro"}
                   </button>
@@ -610,9 +641,9 @@ export default function App() {
 
             <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between`}>
               <div>
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 print:hidden">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 print:hidden">
                   <div>
-                    <h2 className="font-bold text-white text-lg">Historial de Registros</h2>
+                    <h2 className="font-bold text-white text-base">Historial de Registros</h2>
                     <p className="text-xs text-slate-400">Consulta y exporta tus jornadas</p>
                   </div>
 
@@ -626,7 +657,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 print:hidden">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 print:hidden">
                   <select
                     value={selectedWorkerFilter}
                     onChange={(e) => {
@@ -634,7 +665,7 @@ export default function App() {
                       setSelectedFilterValue("");
                       setCurrentPage(1);
                     }}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-indigo-500 transition"
                   >
                     <option value="all">👤 Todos los trabajadores</option>
                     {uniqueWorkers.map(w => (
@@ -649,7 +680,7 @@ export default function App() {
                       setSelectedFilterValue("");
                       setCurrentPage(1);
                     }}
-                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                    className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-indigo-500 transition"
                   >
                     <option value="all">⚡ Todos los periodos</option>
                     <option value="month">📅 Filtrar por Mes</option>
@@ -663,7 +694,7 @@ export default function App() {
                         setSelectedFilterValue(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-indigo-500 transition"
                     >
                       <option value="">Selecciona el mes...</option>
                       {availableMonthsForWorker.map(m => (
@@ -679,7 +710,7 @@ export default function App() {
                         setSelectedFilterValue(e.target.value);
                         setCurrentPage(1);
                       }}
-                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500 transition"
+                      className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-xs focus:outline-none focus:border-indigo-500 transition"
                     >
                       <option value="">Selecciona la semana...</option>
                       {availableWeeksForWorker.map(w => (
@@ -690,12 +721,12 @@ export default function App() {
                 </div>
 
                 {loading ? (
-                  <p className="text-center text-slate-500 py-8">Cargando registros...</p>
+                  <p className="text-center text-slate-500 py-8 text-sm">Cargando registros...</p>
                 ) : filteredRecords.length === 0 ? (
-                  <p className="text-center text-slate-500 py-8">No se encontraron registros para este filtro.</p>
+                  <p className="text-center text-slate-500 py-8 text-sm">No se encontraron registros para este filtro.</p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full text-left border-collapse min-w-[650px]">
                       <thead>
                         <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
                           <th className="pb-3 px-3">Trabajador</th>
@@ -707,7 +738,7 @@ export default function App() {
                           {!isReadOnly && <th className="pb-3 px-3 text-right print:hidden">Acciones</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800/60 text-sm">
+                      <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
                         {currentRecords.map((rec) => (
                           <tr key={rec.id} className="hover:bg-slate-800/40 transition">
                             <td className="py-3 px-3 font-semibold text-white">{rec.worker_name || rec.trabajador}</td>
@@ -717,9 +748,9 @@ export default function App() {
                             <td className="py-3 px-3 text-slate-400 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
                             <td className="py-3 px-3 text-slate-300 text-xs max-w-xs truncate">{rec.description || rec.descripcion || "-"}</td>
                             {!isReadOnly && (
-                              <td className="py-3 px-3 text-right space-x-2 print:hidden">
-                                <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2 py-1 bg-indigo-500/10 rounded-lg">Editar</button>
-                                <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2 py-1 bg-red-500/10 rounded-lg">Borrar</button>
+                              <td className="py-3 px-3 text-right space-x-2 print:hidden whitespace-nowrap">
+                                <button onClick={() => handleEdit(rec)} className="text-indigo-400 hover:text-indigo-300 text-xs font-semibold px-2.5 py-1 bg-indigo-500/10 rounded-lg">Editar</button>
+                                <button onClick={() => handleDelete(rec.id)} className="text-red-400 hover:text-red-300 text-xs font-semibold px-2.5 py-1 bg-red-500/10 rounded-lg">Borrar</button>
                               </td>
                             )}
                           </tr>
@@ -756,11 +787,11 @@ export default function App() {
         ) : currentTab === "empleados" && !isReadOnly ? (
           <div className="space-y-6 max-w-4xl mx-auto">
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h2 className="text-lg font-bold text-white mb-2">👤 Crear Acceso para Empleado</h2>
+              <h2 className="text-base font-bold text-white mb-1.5">👤 Crear Acceso para Empleado</h2>
               <p className="text-xs text-slate-400 mb-6">Genera un usuario de solo vista vinculado a su número de cédula.</p>
 
               {empSuccessMsg && (
-                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-sm text-center">
+                <div className="mb-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs text-center">
                   {empSuccessMsg}
                 </div>
               )}
@@ -773,7 +804,7 @@ export default function App() {
                     required
                     value={empUsername}
                     onChange={(e) => setEmpUsername(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                     placeholder="Ej. juan_emp"
                   />
                 </div>
@@ -785,7 +816,7 @@ export default function App() {
                     required
                     value={empPassword}
                     onChange={(e) => setEmpPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                     placeholder="••••••••"
                   />
                 </div>
@@ -797,7 +828,7 @@ export default function App() {
                     required
                     value={empCedula}
                     onChange={(e) => setEmpCedula(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
                     placeholder="Ej. 1728394850"
                   />
                 </div>
@@ -805,7 +836,7 @@ export default function App() {
                 <div className="md:col-span-3">
                   <button
                     type="submit"
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition duration-200"
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-indigo-600/20 transition text-sm"
                   >
                     Crear Cuenta de Empleado
                   </button>
@@ -814,12 +845,12 @@ export default function App() {
             </div>
 
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
-              <h2 className="text-lg font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
+              <h2 className="text-base font-bold text-white mb-4">📋 Lista de Usuarios Registrados</h2>
               {usersList.length === 0 ? (
                 <p className="text-slate-500 text-sm text-center py-4">No hay usuarios cargados.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse min-w-[500px]">
                     <thead>
                       <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase">
                         <th className="pb-3 px-3">ID</th>
@@ -829,14 +860,14 @@ export default function App() {
                         <th className="pb-3 px-3 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 text-sm">
+                    <tbody className="divide-y divide-slate-800/60 text-xs sm:text-sm">
                       {usersList.map((u) => (
                         <tr key={u.id} className="hover:bg-slate-800/40 transition">
                           <td className="py-3 px-3 text-slate-400">#{u.id}</td>
                           <td className="py-3 px-3 font-semibold text-white">{u.username}</td>
                           <td className="py-3 px-3">
                             <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${u.role === 'admin' ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
-                              {u.role === 'admin' ? '👑 Administrador' : '👁️ Empleado (Solo Vista)'}
+                              {u.role === 'admin' ? '👑 Admin' : '👁️ Empleado'}
                             </span>
                           </td>
                           <td className="py-3 px-3 text-slate-300 font-mono text-xs">{u.cedula || "-"}</td>
@@ -866,7 +897,7 @@ export default function App() {
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-xs focus:outline-none focus:border-indigo-500"
               >
                 <option value="all">📅 Todos los meses (Histórico)</option>
                 {availableMonths.map((m) => (
@@ -875,19 +906,19 @@ export default function App() {
               </select>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Horas del Periodo</p>
-                  <h3 className="text-4xl font-extrabold text-emerald-400 mt-1">{totalHorasStats.toFixed(1)} hrs</h3>
+                  <p className="text-slate-400 text-xs font-medium">Horas del Periodo</p>
+                  <h3 className="text-3xl font-extrabold text-emerald-400 mt-1">{totalHorasStats.toFixed(1)} hrs</h3>
                 </div>
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-2xl">⏱️</div>
               </div>
 
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl flex items-center justify-between">
                 <div>
-                  <p className="text-slate-400 text-sm font-medium">Jornadas en el Periodo</p>
-                  <h3 className="text-4xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
+                  <p className="text-slate-400 text-xs font-medium">Jornadas en el Periodo</p>
+                  <h3 className="text-3xl font-extrabold text-indigo-400 mt-1">{recordsForStats.length}</h3>
                 </div>
                 <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 text-2xl">📊</div>
               </div>
