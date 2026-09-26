@@ -313,10 +313,10 @@ export default function App() {
     });
     aoa.push(["", "", "", "", "TOTAL HORAS:", totalHorasSuma, "", ""]);
     const worksheet = XLSX.utils.aoa_to_sheet(aoa);
-    const headerStyle = { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "1D4ED8" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const titleStyle = { font: { name: "Arial", sz: 12, bold: true, color: { rgb: "0A2540" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const headerStyle = { font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "059669" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const titleStyle = { font: { name: "Arial", sz: 12, bold: true, color: { rgb: "1e293b" } }, alignment: { horizontal: "center", vertical: "center" } };
     const cellStyle = { font: { name: "Arial", sz: 9 }, alignment: { vertical: "center" } };
-    const totalStyle = { font: { name: "Arial", sz: 10, bold: true }, fill: { fgColor: { rgb: "E0F2FE" } }, alignment: { horizontal: "right", vertical: "center" } };
+    const totalStyle = { font: { name: "Arial", sz: 10, bold: true }, fill: { fgColor: { rgb: "d1fae5" } }, alignment: { horizontal: "right", vertical: "center" } };
 
     const range = XLSX.utils.decode_range(worksheet["!ref"]);
     for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -337,25 +337,32 @@ export default function App() {
 
   const handleExportPDF = () => window.print();
 
-  // ----- PANTALLA DE LOGIN (DARK NEUMORPHISM) -----
+  // ----- PANTALLA DE LOGIN (ESTILO DASHBOARD FINANCIERO) -----
   if (!token) {
     return (
-      <div className="min-h-screen bg-[#0A2540] flex items-center justify-center p-4 font-sans text-[#F1F5F9] selection:bg-[#60A5FA]/30">
+      <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center p-4 font-sans text-slate-700">
         
-        <div className="bg-[#0A2540] shadow-[12px_12px_24px_#061728,-12px_-12px_24px_#0e3358] p-10 rounded-[2.5rem] w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-light text-[#F1F5F9] tracking-tight">Bienvenido</h1>
-            <p className="text-[#60A5FA] text-sm mt-2 font-medium">Plataforma Segura</p>
+        <div className="bg-white shadow-[0_10px_30px_rgba(0,0,0,0.06)] border border-slate-100 p-10 rounded-[2.5rem] w-full max-w-md">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-md shadow-emerald-500/20">
+              Q
+            </div>
+            <span className="font-bold text-slate-800 text-lg">Quixotic</span>
           </div>
 
-          <div className="flex bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] p-1.5 rounded-2xl mb-8">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Iniciar Sesión</h1>
+            <p className="text-slate-400 text-sm mt-1">Control de Jornadas y Horas</p>
+          </div>
+
+          <div className="flex bg-slate-100 p-1 rounded-xl mb-6">
             <button
               type="button"
               onClick={() => setLoginRoleType("admin")}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
                 loginRoleType === "admin" 
-                  ? "bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] text-[#60A5FA]" 
-                  : "text-[#E0F2FE]/50 hover:text-[#E0F2FE]"
+                  ? "bg-white shadow-sm text-emerald-600" 
+                  : "text-slate-400 hover:text-slate-600"
               }`}
             >
               Administrador
@@ -363,10 +370,10 @@ export default function App() {
             <button
               type="button"
               onClick={() => setLoginRoleType("employee")}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
                 loginRoleType === "employee" 
-                  ? "bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] text-[#60A5FA]" 
-                  : "text-[#E0F2FE]/50 hover:text-[#E0F2FE]"
+                  ? "bg-white shadow-sm text-emerald-600" 
+                  : "text-slate-400 hover:text-slate-600"
               }`}
             >
               Empleado
@@ -374,52 +381,55 @@ export default function App() {
           </div>
 
           {authError && (
-            <div className="mb-6 p-4 bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-2xl text-red-400 text-xs font-bold text-center border border-red-500/20">
+            <div className="mb-6 p-3 bg-red-50 border border-red-100 rounded-xl text-red-500 text-xs font-bold text-center">
               {authError}
             </div>
           )}
 
-          <form onSubmit={handleAuthSubmit} className="space-y-6">
+          <form onSubmit={handleAuthSubmit} className="space-y-4">
             <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Usuario</label>
               <input
                 type="text"
                 required
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-[#0A2540] shadow-[inset_6px_6px_10px_#061728,inset_-6px_-6px_10px_#0e3358] rounded-2xl px-5 py-4 text-sm text-[#F1F5F9] font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#E0F2FE]/30"
-                placeholder="Usuario"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:outline-none focus:border-emerald-500 transition-all"
+                placeholder="Ingresa tu usuario"
               />
             </div>
 
             <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Contraseña</label>
               <input
                 type="password"
                 required
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-[#0A2540] shadow-[inset_6px_6px_10px_#061728,inset_-6px_-6px_10px_#0e3358] rounded-2xl px-5 py-4 text-sm text-[#F1F5F9] font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#E0F2FE]/30"
-                placeholder="Contraseña"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 font-medium focus:outline-none focus:border-emerald-500 transition-all"
+                placeholder="••••••••"
               />
             </div>
 
             {loginRoleType === "admin" && (
               <div>
+                <label className="block text-xs font-semibold text-emerald-600 mb-1">🔑 Token de Seguridad</label>
                 <input
                   type="password"
                   required
                   value={adminTokenInput}
                   onChange={(e) => setAdminTokenInput(e.target.value)}
-                  className="w-full bg-[#0A2540] shadow-[inset_6px_6px_10px_#061728,inset_-6px_-6px_10px_#0e3358] rounded-2xl px-5 py-4 text-sm text-[#60A5FA] font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA] border-none transition-all placeholder:text-[#1D4ED8]"
-                  placeholder="Token de Seguridad"
+                  className="w-full bg-slate-50 border border-emerald-200 rounded-xl px-4 py-3 text-sm text-emerald-700 font-medium focus:outline-none focus:border-emerald-500 transition-all"
+                  placeholder="Token secreto"
                 />
               </div>
             )}
 
             <button
               type="submit"
-              className="w-full mt-4 bg-gradient-to-r from-[#1D4ED8] to-[#60A5FA] shadow-[6px_6px_12px_#061728,-6px_-6px_12px_#0e3358] text-[#F1F5F9] font-bold py-4 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.3)] transition-all duration-200 text-sm"
+              className="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-600/20 transition-all text-sm"
             >
-              Sign Up / Iniciar
+              Acceder al Sistema
             </button>
           </form>
         </div>
@@ -427,122 +437,131 @@ export default function App() {
     );
   }
 
-  // ----- PLATAFORMA PRINCIPAL (DARK NEUMORPHISM) -----
+  // ----- PLATAFORMA PRINCIPAL (DASHBOARD FINANCIERO) -----
   return (
-    <div className="min-h-screen bg-[#0A2540] text-[#F1F5F9] flex flex-col font-sans selection:bg-[#60A5FA]/30">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-700 flex flex-col font-sans">
       
-      <header className="mx-4 sm:mx-8 mt-6 bg-[#0A2540] shadow-[8px_8px_16px_#061728,-8px_-8px_16px_#0e3358] rounded-3xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 z-40 print:hidden">
+      {/* Header Estilo Dashboard */}
+      <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-40 print:hidden shadow-sm">
         <div className="flex items-center justify-between w-full md:w-auto">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] rounded-2xl flex items-center justify-center text-[#60A5FA] font-extrabold text-lg">
-              AR
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-md shadow-emerald-600/20">
+              Q
             </div>
             <div>
-              <h1 className="font-bold text-[#F1F5F9] text-lg tracking-tight">App Registro</h1>
-              <p className="text-[11px] font-semibold text-[#60A5FA] uppercase tracking-widest mt-0.5">
+              <span className="font-bold text-slate-800 text-base">Quixotic</span>
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                 {isReadOnly ? "Modo Empleado" : "Administrador"}
               </p>
             </div>
           </div>
-          <button onClick={handleLogout} className="md:hidden bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] text-red-400 px-4 py-2 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#061728,inset_-2px_-2px_4px_#0e3358]">
+          <button onClick={handleLogout} className="md:hidden bg-slate-100 text-red-500 px-3 py-1.5 rounded-lg text-xs font-bold">
             Salir
           </button>
         </div>
 
-        <div className="flex items-center bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] p-1.5 rounded-2xl w-full md:w-auto overflow-x-auto gap-1">
-          <button onClick={() => setCurrentTab("gestion")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "gestion" ? "bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] text-[#60A5FA]" : "text-[#E0F2FE]/50 hover:text-[#E0F2FE]"}`}>
-            Gestión
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 w-full md:w-auto overflow-x-auto">
+          <button onClick={() => setCurrentTab("gestion")} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${currentTab === "gestion" ? "bg-white shadow-sm text-emerald-600" : "text-slate-500 hover:text-slate-700"}`}>
+            Dashboard
           </button>
-          <button onClick={() => setCurrentTab("estadisticas")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "estadisticas" ? "bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] text-[#60A5FA]" : "text-[#E0F2FE]/50 hover:text-[#E0F2FE]"}`}>
-            Estadísticas
+          <button onClick={() => setCurrentTab("estadisticas")} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${currentTab === "estadisticas" ? "bg-white shadow-sm text-emerald-600" : "text-slate-500 hover:text-slate-700"}`}>
+            Reports
           </button>
           {!isReadOnly && (
-            <button onClick={() => setCurrentTab("empleados")} className={`flex-1 md:flex-none px-6 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 whitespace-nowrap ${currentTab === "empleados" ? "bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] text-[#60A5FA]" : "text-[#E0F2FE]/50 hover:text-[#E0F2FE]"}`}>
-              Accesos
+            <button onClick={() => setCurrentTab("empleados")} className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${currentTab === "empleados" ? "bg-white shadow-sm text-emerald-600" : "text-slate-500 hover:text-slate-700"}`}>
+              Contacts
             </button>
           )}
         </div>
 
-        <button onClick={handleLogout} className="hidden md:block bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] hover:text-red-400 text-[#E0F2FE]/70 px-5 py-3 rounded-2xl text-xs font-bold transition-all active:shadow-[inset_2px_2px_4px_#061728,inset_-2px_-2px_4px_#0e3358]">
+        <button onClick={handleLogout} className="hidden md:block bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-bold transition-all">
           Cerrar Sesión
         </button>
       </header>
 
-      <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
+      <main className="flex-1 p-6 sm:p-8 max-w-7xl mx-auto w-full">
         {currentTab === "gestion" ? (
-          <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-8`}>
+          <div className={`grid grid-cols-1 ${isReadOnly ? "lg:grid-cols-1" : "lg:grid-cols-3"} gap-6`}>
             
+            {/* Formulario Estilo Tarjeta Blanca */}
             {!isReadOnly && (
-              <div className="bg-[#0A2540] shadow-[8px_8px_16px_#061728,-8px_-8px_16px_#0e3358] p-8 rounded-[2rem] h-fit print:hidden">
-                <div className="flex justify-between items-center mb-8">
-                  <h2 className="font-bold text-[#F1F5F9] text-lg">
+              <div className="bg-white border border-slate-200/80 p-6 rounded-2xl shadow-sm h-fit print:hidden">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-bold text-slate-800 text-sm">
                     {editingId ? "Editar Registro" : "Nuevo Registro"}
                   </h2>
-                  <span className="text-[#60A5FA] bg-[#0A2540] shadow-[inset_3px_3px_6px_#061728,inset_-3px_-3px_6px_#0e3358] px-4 py-2 rounded-xl text-xs font-bold">
+                  <span className="text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-lg text-xs font-bold">
                     {calculatedHours.toFixed(2)} hrs
                   </span>
                 </div>
 
-                <form onSubmit={handleSubmitRecord} className="space-y-6">
+                <form onSubmit={handleSubmitRecord} className="space-y-4">
                   <div>
-                    <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#E0F2FE]/30" placeholder="Nombre del trabajador *" />
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Trabajador</label>
+                    <input type="text" required value={workerName} onChange={(e) => setWorkerName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 text-sm focus:outline-none focus:border-emerald-500" placeholder="Nombre completo" />
                   </div>
                   <div>
-                    <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all" />
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Fecha</label>
+                    <input type="date" required value={workDate} onChange={(e) => setWorkDate(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 text-sm focus:outline-none focus:border-emerald-500" />
                   </div>
-                  <div className="grid grid-cols-2 gap-5">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all" />
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Entrada</label>
+                      <input type="time" required value={entryTime} onChange={(e) => setEntryTime(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 text-sm focus:outline-none focus:border-emerald-500" />
                     </div>
                     <div>
-                      <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all" />
+                      <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Salida</label>
+                      <input type="time" required value={exitTime} onChange={(e) => setExitTime(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 text-sm focus:outline-none focus:border-emerald-500" />
                     </div>
                   </div>
                   <div>
-                    <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#E0F2FE]/30" placeholder="Cédula / CC *" />
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Cédula / CC</label>
+                    <input type="text" required value={costCenter} onChange={(e) => setCostCenter(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 text-sm focus:outline-none focus:border-emerald-500" placeholder="Ej. 1700000000" />
                   </div>
                   <div>
-                    <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#E0F2FE]/30 resize-none" placeholder="Descripción opcional..."></textarea>
+                    <label className="block text-[11px] font-bold text-slate-400 uppercase mb-1">Descripción</label>
+                    <textarea rows="2" value={description} onChange={(e) => setDescription(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-700 text-sm focus:outline-none focus:border-emerald-500 resize-none" placeholder="Opcional..."></textarea>
                   </div>
-                  <button type="submit" className="w-full bg-gradient-to-r from-[#1D4ED8] to-[#60A5FA] shadow-[6px_6px_12px_#061728,-6px_-6px_12px_#0e3358] text-[#F1F5F9] font-bold py-4 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.3)] transition-all duration-200 text-sm mt-4">
-                    {editingId ? "Actualizar" : "Agregar (+)"}
+                  <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-md shadow-emerald-600/20 transition-all text-sm mt-2">
+                    {editingId ? "Actualizar Registro" : "Guardar Registro"}
                   </button>
                 </form>
               </div>
             )}
 
-            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-[#0A2540] shadow-[8px_8px_16px_#061728,-8px_-8px_16px_#0e3358] p-6 sm:p-8 rounded-[2rem] flex flex-col justify-between`}>
+            {/* Historial de Registros */}
+            <div className={`${isReadOnly ? "lg:col-span-1" : "lg:col-span-2"} bg-white border border-slate-200/80 p-6 sm:p-8 rounded-2xl shadow-sm flex flex-col justify-between`}>
               <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 print:hidden">
-                  <h2 className="font-bold text-[#F1F5F9] text-lg">Historial de Registros</h2>
-                  <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
-                    <button onClick={handleExportExcel} className="bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] text-[#60A5FA] px-5 py-2.5 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#061728,inset_-2px_-2px_4px_#0e3358] transition-all">
-                      Descargar
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print:hidden">
+                  <h2 className="font-bold text-slate-800 text-base">Payment History</h2>
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button onClick={handleExportExcel} className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold transition-all">
+                      Excel
                     </button>
-                    <button onClick={handleExportPDF} className="bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] text-[#E0F2FE]/70 px-5 py-2.5 rounded-xl text-xs font-bold active:shadow-[inset_2px_2px_4px_#061728,inset_-2px_-2px_4px_#0e3358] transition-all">
-                      Imprimir
+                    <button onClick={handleExportPDF} className="bg-slate-100 border border-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition-all">
+                      PDF
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8 print:hidden">
-                  <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-2xl px-4 py-3.5 text-[#E0F2FE]/80 text-xs font-bold focus:outline-none border-none">
-                    <option value="all">Categoría (Todos)</option>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6 print:hidden">
+                  <select value={selectedWorkerFilter} onChange={(e) => { setSelectedWorkerFilter(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-600 text-xs font-bold focus:outline-none">
+                    <option value="all">Todos los trabajadores</option>
                     {uniqueWorkers.map(w => <option key={w} value={w}>{w}</option>)}
                   </select>
-                  <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-2xl px-4 py-3.5 text-[#E0F2FE]/80 text-xs font-bold focus:outline-none border-none">
+                  <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setSelectedFilterValue(""); setCurrentPage(1); }} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-600 text-xs font-bold focus:outline-none">
                     <option value="all">Filtro de Tiempo</option>
                     <option value="month">Por Mes</option>
                     <option value="week">Por Semana</option>
                   </select>
                   {filterType === "month" && (
-                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-2xl px-4 py-3.5 text-[#E0F2FE]/80 text-xs font-bold focus:outline-none border-none">
+                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-600 text-xs font-bold focus:outline-none">
                       <option value="">Selecciona el mes...</option>
                       {availableMonthsForWorker.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   )}
                   {filterType === "week" && (
-                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-2xl px-4 py-3.5 text-[#E0F2FE]/80 text-xs font-bold focus:outline-none border-none">
+                    <select value={selectedFilterValue} onChange={(e) => { setSelectedFilterValue(e.target.value); setCurrentPage(1); }} className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-600 text-xs font-bold focus:outline-none">
                       <option value="">Selecciona la semana...</option>
                       {availableWeeksForWorker.map(w => <option key={w} value={w}>{w}</option>)}
                     </select>
@@ -550,36 +569,36 @@ export default function App() {
                 </div>
 
                 {loading ? (
-                  <div className="py-16 flex justify-center"><span className="text-[#E0F2FE]/50 text-sm font-bold">Cargando...</span></div>
+                  <div className="py-12 flex justify-center"><span className="text-slate-400 text-sm font-bold">Cargando registros...</span></div>
                 ) : filteredRecords.length === 0 ? (
-                  <div className="py-16 flex justify-center"><span className="text-[#E0F2FE]/50 text-sm font-bold">No se encontraron resultados.</span></div>
+                  <div className="py-12 flex justify-center"><span className="text-slate-400 text-sm font-bold">No se encontraron registros.</span></div>
                 ) : (
-                  <div className="overflow-x-auto rounded-2xl shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] p-2">
-                    <table className="w-full text-left min-w-[700px]">
+                  <div className="overflow-x-auto rounded-xl border border-slate-100">
+                    <table className="w-full text-left min-w-[650px]">
                       <thead>
-                        <tr className="text-[#E0F2FE]/50 text-[10px] font-bold uppercase tracking-widest">
-                          <th className="py-4 px-5">Trabajador</th>
-                          <th className="py-4 px-5">Fecha</th>
-                          <th className="py-4 px-5">Horario</th>
-                          <th className="py-4 px-5">Horas</th>
-                          <th className="py-4 px-5">Cédula</th>
-                          <th className="py-4 px-5">Descripción</th>
-                          {!isReadOnly && <th className="py-4 px-5 text-right print:hidden">Acciones</th>}
+                        <tr className="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-wider border-b border-slate-100">
+                          <th className="py-3.5 px-4">Trabajador</th>
+                          <th className="py-3.5 px-4">Fecha</th>
+                          <th className="py-3.5 px-4">Horario</th>
+                          <th className="py-3.5 px-4">Horas</th>
+                          <th className="py-3.5 px-4">Cédula</th>
+                          <th className="py-3.5 px-4">Descripción</th>
+                          {!isReadOnly && <th className="py-3.5 px-4 text-right print:hidden">Acciones</th>}
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#0e3358]/50 text-sm font-medium text-[#E0F2FE]/80">
+                      <tbody className="divide-y divide-slate-100 text-xs font-medium text-slate-600">
                         {currentRecords.map((rec) => (
-                          <tr key={rec.id} className="hover:bg-[#061728]/30 transition-colors">
-                            <td className="py-4 px-5 text-[#F1F5F9] font-bold">{rec.worker_name || rec.trabajador}</td>
-                            <td className="py-4 px-5">{rec.work_date || rec.fecha}</td>
-                            <td className="py-4 px-5 text-xs">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
-                            <td className="py-4 px-5"><span className="bg-[#0A2540] shadow-[2px_2px_4px_#061728,-2px_-2px_4px_#0e3358] text-[#60A5FA] px-3 py-1.5 rounded-lg font-bold text-xs">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)}</span></td>
-                            <td className="py-4 px-5 text-xs">{rec.cost_center || rec.centro_costo || "-"}</td>
-                            <td className="py-4 px-5 text-xs max-w-[150px] truncate">{rec.description || rec.descripcion || "-"}</td>
+                          <tr key={rec.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-3.5 px-4 font-bold text-slate-800">{rec.worker_name || rec.trabajador}</td>
+                            <td className="py-3.5 px-4">{rec.work_date || rec.fecha}</td>
+                            <td className="py-3.5 px-4 text-slate-400">{rec.entry_time || rec.hora_entrada} - {rec.exit_time || rec.hora_salida}</td>
+                            <td className="py-3.5 px-4"><span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-md font-bold">{Number(rec.calculated_hours || rec.horas || 0).toFixed(1)} hrs</span></td>
+                            <td className="py-3.5 px-4 text-slate-400">{rec.cost_center || rec.centro_costo || "-"}</td>
+                            <td className="py-3.5 px-4 text-slate-400 max-w-[130px] truncate">{rec.description || rec.descripcion || "-"}</td>
                             {!isReadOnly && (
-                              <td className="py-4 px-5 text-right space-x-3 print:hidden whitespace-nowrap">
-                                <button onClick={() => handleEdit(rec)} className="text-[#E0F2FE]/50 hover:text-[#60A5FA] text-xs font-bold transition-all">Edit</button>
-                                <button onClick={() => handleDelete(rec.id)} className="text-[#E0F2FE]/50 hover:text-red-400 text-xs font-bold transition-all">Del</button>
+                              <td className="py-3.5 px-4 text-right space-x-2 print:hidden whitespace-nowrap">
+                                <button onClick={() => handleEdit(rec)} className="text-indigo-600 hover:underline font-bold">Editar</button>
+                                <button onClick={() => handleDelete(rec.id)} className="text-red-500 hover:underline font-bold">Borrar</button>
                               </td>
                             )}
                           </tr>
@@ -591,83 +610,82 @@ export default function App() {
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-8 print:hidden">
-                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-10 h-10 flex items-center justify-center bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] rounded-xl text-[#E0F2FE]/50 hover:text-[#60A5FA] disabled:opacity-40 active:shadow-[inset_2px_2px_4px_#061728,inset_-2px_-2px_4px_#0e3358] transition-all font-bold">
-                    ←
+                <div className="flex items-center justify-between border-t border-slate-100 pt-4 mt-6 print:hidden">
+                  <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-600 disabled:opacity-40">
+                    ← Anterior
                   </button>
-                  <div className="flex gap-2">
-                    <span className="w-10 h-10 flex items-center justify-center bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-xl text-[#60A5FA] font-bold text-sm">
-                      {currentPage}
-                    </span>
-                  </div>
-                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-10 h-10 flex items-center justify-center bg-[#0A2540] shadow-[4px_4px_8px_#061728,-4px_-4px_8px_#0e3358] rounded-xl text-[#E0F2FE]/50 hover:text-[#60A5FA] disabled:opacity-40 active:shadow-[inset_2px_2px_4px_#061728,inset_-2px_-2px_4px_#0e3358] transition-all font-bold">
-                    →
+                  <span className="text-xs text-slate-400 font-bold">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-600 disabled:opacity-40">
+                    Siguiente →
                   </button>
                 </div>
               )}
             </div>
           </div>
         ) : currentTab === "empleados" && !isReadOnly ? (
-          <div className="space-y-8 max-w-4xl mx-auto">
-            <div className="bg-[#0A2540] shadow-[8px_8px_16px_#061728,-8px_-8px_16px_#0e3358] p-10 rounded-[2.5rem]">
-              <h2 className="text-xl font-bold text-[#F1F5F9] mb-2">Crear Acceso</h2>
-              <p className="text-sm text-[#E0F2FE]/60 mb-8 font-medium">Configuración de cuentas</p>
+          <div className="space-y-6 max-w-4xl mx-auto">
+            <div className="bg-white border border-slate-200/80 p-6 sm:p-8 rounded-2xl shadow-sm">
+              <h2 className="text-base font-bold text-slate-800 mb-1">Crear Acceso para Empleado</h2>
+              <p className="text-xs text-slate-400 mb-6">Genera un usuario de solo vista vinculado a su cédula.</p>
 
               {empSuccessMsg && (
-                <div className="mb-6 p-4 bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-2xl text-[#60A5FA] text-sm text-center font-bold border border-[#1D4ED8]/30">
+                <div className="mb-4 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-600 text-xs font-bold text-center">
                   {empSuccessMsg}
                 </div>
               )}
 
-              <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                <div className="md:col-span-1">
-                  <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#E0F2FE]/30" placeholder="Usuario" />
+              <form onSubmit={handleCreateEmployee} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Usuario</label>
+                  <input type="text" required value={empUsername} onChange={(e) => setEmpUsername(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-700" placeholder="Ej. juan" />
                 </div>
-                <div className="md:col-span-1">
-                  <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#E0F2FE]/30" placeholder="Contraseña" />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Contraseña</label>
+                  <input type="password" required value={empPassword} onChange={(e) => setEmpPassword(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-700" placeholder="••••••••" />
                 </div>
-                <div className="md:col-span-1">
-                  <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className="w-full bg-[#0A2540] shadow-[inset_5px_5px_10px_#061728,inset_-5px_-5px_10px_#0e3358] rounded-2xl px-5 py-3.5 text-[#F1F5F9] text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#60A5FA]/50 border-none transition-all placeholder:text-[#E0F2FE]/30" placeholder="Cédula" />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Cédula</label>
+                  <input type="text" required value={empCedula} onChange={(e) => setEmpCedula(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-700" placeholder="17000000" />
                 </div>
-                <div className="md:col-span-1">
-                  <button type="submit" className="w-full bg-gradient-to-r from-[#1D4ED8] to-[#60A5FA] shadow-[6px_6px_12px_#061728,-6px_-6px_12px_#0e3358] text-[#F1F5F9] font-bold py-3.5 rounded-2xl hover:opacity-90 active:shadow-[inset_4px_4px_8px_rgba(0,0,0,0.3)] transition-all text-sm">
-                    Guardar
+                <div className="md:col-span-3">
+                  <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl transition-all text-sm">
+                    Crear Cuenta de Empleado
                   </button>
                 </div>
               </form>
             </div>
 
-            <div className="bg-[#0A2540] shadow-[8px_8px_16px_#061728,-8px_-8px_16px_#0e3358] p-10 rounded-[2.5rem]">
-              <h2 className="text-xl font-bold text-[#F1F5F9] mb-8">Directorio de Usuarios</h2>
+            <div className="bg-white border border-slate-200/80 p-6 sm:p-8 rounded-2xl shadow-sm">
+              <h2 className="text-base font-bold text-slate-800 mb-4">Directorio de Usuarios</h2>
               {usersList.length === 0 ? (
-                <div className="py-12 flex justify-center"><span className="text-[#E0F2FE]/50 text-sm font-bold">No hay usuarios cargados.</span></div>
+                <div className="py-8 flex justify-center"><span className="text-slate-400 text-sm">No hay usuarios cargados.</span></div>
               ) : (
-                <div className="overflow-x-auto shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-2xl p-2">
+                <div className="overflow-x-auto">
                   <table className="w-full text-left min-w-[500px]">
                     <thead>
-                      <tr className="text-[#E0F2FE]/50 text-[10px] font-bold uppercase tracking-widest">
-                        <th className="py-4 px-5">ID</th>
-                        <th className="py-4 px-5">Usuario</th>
-                        <th className="py-4 px-5">Rol</th>
-                        <th className="py-4 px-5">Cédula</th>
-                        <th className="py-4 px-5 text-right">Settings</th>
+                      <tr className="border-b border-slate-100 text-slate-400 text-[10px] font-bold uppercase">
+                        <th className="pb-3 px-3">ID</th>
+                        <th className="pb-3 px-3">Usuario</th>
+                        <th className="pb-3 px-3">Rol</th>
+                        <th className="pb-3 px-3">Cédula</th>
+                        <th className="pb-3 px-3 text-right">Acciones</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#0e3358]/50 text-sm font-medium text-[#E0F2FE]/80">
+                    <tbody className="divide-y divide-slate-100 text-xs">
                       {usersList.map((u) => (
-                        <tr key={u.id} className="hover:bg-[#061728]/30 transition-colors">
-                          <td className="py-4 px-5">#{u.id}</td>
-                          <td className="py-4 px-5 text-[#F1F5F9] font-bold">{u.username}</td>
-                          <td className="py-4 px-5">
-                            <span className={`px-4 py-1.5 rounded-xl text-xs font-bold shadow-[2px_2px_4px_#061728,-2px_-2px_4px_#0e3358] ${u.role === 'admin' ? 'bg-[#0A2540] text-[#60A5FA]' : 'bg-[#0A2540] text-[#E0F2FE]/60'}`}>
+                        <tr key={u.id} className="hover:bg-slate-50">
+                          <td className="py-3 px-3 text-slate-400">#{u.id}</td>
+                          <td className="py-3 px-3 font-bold text-slate-800">{u.username}</td>
+                          <td className="py-3 px-3">
+                            <span className={`px-2.5 py-1 rounded-lg font-bold ${u.role === 'admin' ? 'bg-indigo-50 text-indigo-600' : 'bg-emerald-50 text-emerald-600'}`}>
                               {u.role === 'admin' ? 'Admin' : 'Empleado'}
                             </span>
                           </td>
-                          <td className="py-4 px-5 font-mono text-xs">{u.cedula || "-"}</td>
-                          <td className="py-4 px-5 text-right">
-                            <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-[#E0F2FE]/50 hover:text-red-400 text-xs font-bold transition-all">
-                              Revocar
-                            </button>
+                          <td className="py-3 px-3 font-mono text-slate-500">{u.cedula || "-"}</td>
+                          <td className="py-3 px-3 text-right">
+                            <button onClick={() => handleDeleteUser(u.id, u.username)} className="text-red-500 font-bold hover:underline">Eliminar</button>
                           </td>
                         </tr>
                       ))}
@@ -678,81 +696,53 @@ export default function App() {
             </div>
           </div>
         ) : (
-          <div className="space-y-8 max-w-5xl mx-auto">
+          <div className="space-y-6 max-w-5xl mx-auto">
             
-            <div className="bg-[#0A2540] shadow-[8px_8px_16px_#061728,-8px_-8px_16px_#0e3358] p-6 rounded-[2rem] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-sm flex items-center justify-between">
               <div>
-                <h3 className="text-[#F1F5F9] font-bold text-lg">Analíticas</h3>
+                <h3 className="text-slate-800 font-bold text-base">Engagement Rate & Reports</h3>
               </div>
-              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] rounded-2xl px-5 py-3 text-[#E0F2FE]/80 text-sm font-bold focus:outline-none border-none w-full sm:w-auto">
-                <option value="all">Filtro Global</option>
+              <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-slate-700 text-xs font-bold focus:outline-none">
+                <option value="all">Todos los meses (Histórico)</option>
                 {availableMonths.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div className="bg-[#0A2540] shadow-[12px_12px_24px_#061728,-12px_-12px_24px_#0e3358] p-10 rounded-[2.5rem] flex items-center justify-between">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-white border border-slate-200/80 p-6 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
-                  <p className="text-[#E0F2FE]/50 text-[11px] font-bold uppercase tracking-widest mb-3">LOREM IPSUM (Horas)</p>
-                  <h3 className="text-4xl font-extrabold text-[#F1F5F9] tracking-tight">
-                    {totalHorasStats.toFixed(1)} <span className="text-xl text-[#60A5FA] font-medium">hrs</span>
-                  </h3>
+                  <p className="text-slate-400 text-xs font-bold uppercase">Total Horas</p>
+                  <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{totalHorasStats.toFixed(1)} <span className="text-lg text-slate-400">hrs</span></h3>
                 </div>
-                <div className="w-24 h-24 rounded-full shadow-[8px_8px_16px_#061728,-8px_-8px_16px_#0e3358] flex items-center justify-center relative">
-                   <div className="absolute inset-0 rounded-full border-[6px] border-[#60A5FA] border-l-transparent border-t-transparent opacity-80 transform rotate-45"></div>
-                   <div className="w-16 h-16 rounded-full bg-[#0A2540] shadow-[inset_4px_4px_8px_#061728,inset_-4px_-4px_8px_#0e3358] flex items-center justify-center">
-                     <span className="font-bold text-sm text-[#F1F5F9]">75%</span>
-                   </div>
-                </div>
+                <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold">+17.8%</div>
               </div>
 
-              <div className="bg-[#0A2540] shadow-[12px_12px_24px_#061728,-12px_-12px_24px_#0e3358] p-10 rounded-[2.5rem] flex items-center justify-between">
+              <div className="bg-white border border-slate-200/80 p-6 rounded-2xl shadow-sm flex items-center justify-between">
                 <div>
-                  <p className="text-[#E0F2FE]/50 text-[11px] font-bold uppercase tracking-widest mb-3">Jornadas Totales</p>
-                  <h3 className="text-4xl font-extrabold text-[#F1F5F9] tracking-tight">{recordsForStats.length}</h3>
+                  <p className="text-slate-400 text-xs font-bold uppercase">Total Jornadas</p>
+                  <h3 className="text-3xl font-extrabold text-slate-800 mt-1">{recordsForStats.length}</h3>
                 </div>
-                <div className="w-20 h-20 rounded-[1.5rem] shadow-[8px_8px_16px_#061728,-8px_-8px_16px_#0e3358] flex items-center justify-center">
-                  <div className="w-14 h-14 bg-gradient-to-br from-[#1D4ED8] to-[#60A5FA] rounded-xl shadow-[inset_2px_2px_4px_rgba(0,0,0,0.3)] flex items-center justify-center text-[#F1F5F9] font-bold text-xs">
-                    ON
-                  </div>
-                </div>
+                <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-bold">Active</div>
               </div>
             </div>
 
-            <div className="bg-[#0A2540] shadow-[12px_12px_24px_#061728,-12px_-12px_24px_#0e3358] p-10 rounded-[3rem]">
-              <div className="mb-10">
-                <h3 className="text-[#F1F5F9] font-extrabold text-2xl tracking-tight">2201</h3>
-                <p className="text-[#E0F2FE]/50 text-xs font-medium mt-1">Horas Totales por Trabajador</p>
-              </div>
-              
+            <div className="bg-white border border-slate-200/80 p-6 sm:p-8 rounded-2xl shadow-sm">
+              <h3 className="text-slate-800 font-bold text-base mb-6">Rendimiento por Trabajador</h3>
               {chartData.length === 0 ? (
-                <div className="py-16 flex justify-center"><span className="text-[#E0F2FE]/50 text-sm font-bold">No hay datos suficientes para mostrar el gráfico.</span></div>
+                <div className="py-12 flex justify-center"><span className="text-slate-400 text-sm">No hay datos suficientes para graficar.</span></div>
               ) : (
-                <div className="w-full h-[300px]">
+                <div className="w-full h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} margin={{ top: 10, right: 30, left: -20, bottom: 5 }}>
-                      <defs>
-                        <linearGradient id="colorBlueDarkNeo" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#60A5FA" stopOpacity={1}/>
-                          <stop offset="95%" stopColor="#1D4ED8" stopOpacity={0.8}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="0" stroke="#0e3358" opacity={0.5} vertical={false} />
-                      <XAxis dataKey="name" stroke="#E0F2FE" opacity={0.6} fontSize={11} fontWeight={600} tickLine={false} axisLine={false} dy={15} />
-                      <YAxis stroke="#E0F2FE" opacity={0.6} fontSize={11} fontWeight={600} tickLine={false} axisLine={false} />
-                      <Tooltip cursor={{fill: '#0e3358', opacity: 0.3}} contentStyle={{ backgroundColor: "#0A2540", borderColor: "transparent", borderRadius: "20px", color: "#F1F5F9", fontSize: "12px", fontWeight: "bold", boxShadow: "8px 8px 16px #061728, -8px -8px 16px #0e3358" }} />
-                      <Bar dataKey="horas" fill="url(#colorBlueDarkNeo)" radius={[12, 12, 0, 0]} barSize={40} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: "#ffffff", borderColor: "#e2e8f0", borderRadius: "12px", color: "#1e293b", fontSize: "12px", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }} />
+                      <Bar dataKey="horas" fill="#059669" radius={[8, 8, 0, 0]} barSize={35} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               )}
-              <div className="mt-8 flex items-center justify-center gap-4">
-                 <div className="h-4 w-full max-w-sm bg-[#0A2540] shadow-[inset_3px_3px_6px_#061728,inset_-3px_-3px_6px_#0e3358] rounded-full relative">
-                   <div className="absolute top-0 left-0 h-4 w-2/3 bg-gradient-to-r from-[#1D4ED8] to-[#60A5FA] rounded-full shadow-[2px_0px_4px_rgba(0,0,0,0.3)]"></div>
-                   <div className="absolute top-1/2 left-2/3 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-[#0A2540] border-[5px] border-[#60A5FA] rounded-full shadow-[2px_2px_5px_#061728]"></div>
-                 </div>
-                 <span className="font-bold text-[#60A5FA] text-sm">71%</span>
-              </div>
             </div>
           </div>
         )}
