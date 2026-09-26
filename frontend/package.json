@@ -1,4 +1,5 @@
 {
+  
   "name": "app-registro-frontend",
   "private": true,
   "version": "0.1.0",
@@ -11,6 +12,7 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
+  
   "dependencies": {
     "chart.js": "^4.5.1",
     "firebase": "^12.19.0",
@@ -31,5 +33,10 @@
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.19",
     "vite": "^5.4.0"
+  },
+  "optionalDependencies": {
+  "@rollup/rollup-linux-x64-gnu": "4.21.3"
   }
-}
+  
+} 
+
