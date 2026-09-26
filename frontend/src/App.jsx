@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import XLSX from "xlsx-js-style";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import CustomModal from "./components/CustomModal";
+import LoginIllustration from "./components/LoginIllustration";
 import { 
   fetchRecords, 
   createRecord, 
@@ -20,7 +21,6 @@ export default function App() {
   const [loginRoleType, setLoginRoleType] = useState("admin");
   const [authError, setAuthError] = useState("");
 
-  // Estado del Modal Personalizado
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
     title: "",
@@ -52,23 +52,19 @@ export default function App() {
     });
   };
 
-  // Estado para el carrusel del Login
   const [loginSlide, setLoginSlide] = useState(0);
   const loginSlidesData = [
     {
-      title: "¡Bienvenido a JornadaPro!",
-      desc: "Control profesional de jornadas laborales y horas de trabajo en tiempo real.",
-      icon: "📊"
+      title: "Control Profesional de Jornadas",
+      desc: "Gestiona horas de entrada, salida y reportes en tiempo real con máxima precisión."
     },
     {
-      title: "Gestión Multi-Usuario",
-      desc: "Administra accesos seguros para empleados y supervisores de forma ágil.",
-      icon: "👥"
+      title: "Gestión Multi-Usuario Ágil",
+      desc: "Administra accesos seguros y diferenciados para empleados y administradores."
     },
     {
-      title: "Reportes Inteligentes",
-      desc: "Exporta reportes detallados en Excel y PDF listos para nómina y costos.",
-      icon: "📈"
+      title: "Reportes Inteligentes y Listos",
+      desc: "Exporta reportes detallados en Excel y PDF optimizados para control de nómina."
     }
   ];
 
@@ -76,7 +72,7 @@ export default function App() {
     if (!token) {
       const interval = setInterval(() => {
         setLoginSlide((prev) => (prev + 1) % loginSlidesData.length);
-      }, 4000);
+      }, 4500);
       return () => clearInterval(interval);
     }
   }, [token]);
@@ -450,13 +446,15 @@ export default function App() {
               <span className="font-black text-xl tracking-tight text-white">JornadaPro</span>
             </div>
 
-            <div className="my-auto py-10 relative z-10 transition-all duration-500">
-              <div className="text-4xl mb-4">{loginSlidesData[loginSlide].icon}</div>
-              <h2 className="text-2xl md:text-3xl font-black mb-3 leading-tight">{loginSlidesData[loginSlide].title}</h2>
-              <p className="text-blue-100 text-sm font-medium leading-relaxed">{loginSlidesData[loginSlide].desc}</p>
+            {/* Ilustración Vectorial Animada */}
+            <LoginIllustration slideIndex={loginSlide} />
+
+            <div className="relative z-10 transition-all duration-500">
+              <h2 className="text-xl md:text-2xl font-black mb-2 leading-tight">{loginSlidesData[loginSlide].title}</h2>
+              <p className="text-blue-100 text-xs font-medium leading-relaxed">{loginSlidesData[loginSlide].desc}</p>
             </div>
 
-            <div className="flex items-center gap-2 relative z-10">
+            <div className="flex items-center gap-2 relative z-10 mt-6">
               {loginSlidesData.map((_, idx) => (
                 <button
                   key={idx}
